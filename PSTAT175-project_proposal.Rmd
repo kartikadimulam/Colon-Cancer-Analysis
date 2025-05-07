@@ -32,4 +32,4 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
 
 2. Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
 
-3. hhh
+3. hhhhh
