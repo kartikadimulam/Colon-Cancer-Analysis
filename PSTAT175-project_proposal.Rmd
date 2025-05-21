@@ -40,8 +40,119 @@ colon.recur = colon[colon$etype==1,]
 colon.death = colon[colon$etype==2,]
 
 colon.recur.cox = coxph(Surv(time,status)~rx, colon.recur)
+summary(colon.recur.cox)
 anova(colon.recur.cox)
 ```
-Low toxicity treatment doesn't have a significant effect on recurrence, but moderately toxic treatment does. 
+Low toxicity treatment doesn't have a significant effect on recurrence, but moderately toxic treatment does. Overall the rx covariate is significant on time until recurrence
 
+```{r}
+colon.recur.CI = exp(confint(colon.recur.cox))
+```
+Again the CIs show that Lev is not significant but Lev+5FU is significant in reducing time until recurrence. Our hazard ratio CI for Lev treatment contains 1 but our hazard ratio CI for Lev+5FU treatment does not. We are 95% confident that Lev+5FU treatment significantly affects time until recurrence. 
 
+```{r}
+exp(coef(colon.recur.cox))
+```
+At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence.
+
+```{r}
+colon.rx.sex = coxph(Surv(time,status)~rx + sex, colon.recur)
+colon.rx.age = coxph(Surv(time,status)~rx + age, colon.recur)
+colon.rx.obstruct = coxph(Surv(time,status)~rx + obstruct, colon.recur)
+colon.rx.perfor = coxph(Surv(time,status)~rx + perfor, colon.recur)
+colon.rx.adhere = coxph(Surv(time,status)~rx + adhere, colon.recur)
+colon.rx.nodes = coxph(Surv(time,status)~rx + nodes, colon.recur)
+colon.rx.differ = coxph(Surv(time,status)~rx + differ, colon.recur)
+colon.rx.extent = coxph(Surv(time,status)~rx + extent, colon.recur)
+colon.rx.surg = coxph(Surv(time,status)~rx + surg, colon.recur)
+colon.rx.node4 = coxph(Surv(time,status)~rx + node4, colon.recur)
+
+AIC(colon.rx.sex, colon.rx.age, colon.rx.obstruct, colon.rx.perfor,
+    colon.rx.adhere, colon.rx.nodes, colon.rx.differ, colon.rx.extent,
+    colon.rx.surg, colon.rx.node4)
+```
+
+The best model is adding nodes as a covariate, attaining an AIC of 5827.4. The second best model is differentiation of tumor and the third best is node4 (more than 4 positive lymph nodes). However, we should not include node4 since it is highly correlated with nodes. They are essentially measuring the same thing. 
+
+```{r}
+colon.rx.nodes.differ = coxph(Surv(time,status)~rx + nodes + differ, colon.recur)
+colon.rx.nodes.sex = coxph(Surv(time,status)~rx + nodes + sex, colon.recur)
+colon.rx.nodes.age = coxph(Surv(time,status)~rx + nodes + age, colon.recur)
+colon.rx.nodes.obstruct = coxph(Surv(time,status)~rx + nodes + obstruct, colon.recur)
+colon.rx.nodes.perfor = coxph(Surv(time,status)~rx + nodes + perfor, colon.recur)
+colon.rx.nodes.adhere = coxph(Surv(time,status)~rx + nodes + adhere, colon.recur)
+colon.rx.nodes.extent = coxph(Surv(time,status)~rx + nodes + extent, colon.recur)
+colon.rx.nodes.surg = coxph(Surv(time,status)~rx + nodes + surg, colon.recur)
+
+AIC(colon.rx.nodes.differ, colon.rx.nodes.sex, colon.rx.nodes.age, colon.rx.nodes.obstruct, colon.rx.nodes.perfor, colon.rx.nodes.adhere, colon.rx.nodes.extent, colon.rx.nodes.surg)
+```
+Adding differ as the next covariate is the best model, as our model now has an AIC of 5676.21 
+
+```{r}
+colon.rnd.sex = coxph(Surv(time,status)~rx + nodes + differ + sex, colon.recur)
+colon.rnd.age  = coxph(Surv(time,status)~rx + nodes + differ + age, colon.recur)
+colon.rnd.obstruct  = coxph(Surv(time,status)~rx + nodes + differ + obstruct, colon.recur)
+colon.rnd.perfor  = coxph(Surv(time,status)~rx + nodes + differ +perfor , colon.recur)
+colon.rnd.adhere = coxph(Surv(time,status)~rx + nodes + differ +adhere , colon.recur)
+colon.rnd.extent = coxph(Surv(time,status)~rx + nodes + differ + extent, colon.recur)
+colon.rnd.surg  = coxph(Surv(time,status)~rx + nodes + differ +surg , colon.recur)
+AIC(colon.rnd.sex, colon.rnd.age, colon.rnd.obstruct, colon.rnd.perfor, colon.rnd.adhere, colon.rnd.extent, colon.rnd.surg)
+```
+Adding extent as the next covariate is the best model, attaining an AIC of 5658.7
+
+```{r}
+BIC(colon.rnd.extent,colon.rx.nodes.differ, colon.rx.nodes, colon.recur.cox)
+```
+Using BIC as a sanity check helps us to verify that adding extent as another covariate is still beneficial to our model's prediction accuracy while avoiding overfitting (too many covariates), attaining a BIC of 5679.21. 
+
+```{r}
+colon.rnde.sex = coxph(Surv(time,status)~rx + nodes + differ + extent + sex, colon.recur)
+colon.rnde.age = coxph(Surv(time,status)~rx + nodes + differ + extent + age, colon.recur)
+colon.rnde.obstruct = coxph(Surv(time,status)~rx + nodes + differ + extent + obstruct, colon.recur)
+colon.rnde.perfor = coxph(Surv(time,status)~rx + nodes + differ + extent + perfor, colon.recur)
+colon.rnde.adhere = coxph(Surv(time,status)~rx + nodes + differ + extent + adhere, colon.recur)
+colon.rnde.surg = coxph(Surv(time,status)~rx + nodes + differ + extent + surg, colon.recur)
+
+AIC(colon.rnde.sex, colon.rnde.age, colon.rnde.obstruct, colon.rnde.perfor,
+    colon.rnde.adhere, colon.rnde.surg)
+BIC(colon.rnde.sex, colon.rnde.age, colon.rnde.obstruct, colon.rnde.perfor,
+    colon.rnde.adhere, colon.rnde.surg)
+```
+Adding Surg (time from surgery until registration into the study) as our next covariate again lowers our AIC to 5655.55
+
+```{r}
+colon.rndes.sex = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + sex, colon.recur)
+colon.rndes.age = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + age, colon.recur)
+colon.rndes.obstruct = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + obstruct, colon.recur)
+colon.rndes.perfor = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + perfor, colon.recur)
+colon.rndes.adhere = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + adhere, colon.recur)
+
+AIC(colon.rndes.sex, colon.rndes.age, colon.rndes.obstruct, colon.rndes.perfor, colon.rndes.adhere)
+```
+We attain a slightly lower AIC of 5654.37 by adding sex as our next covariate. However, since the change is small we will verify this using BIC score too. 
+
+```{r}
+BIC(colon.rndes.sex, colon.rnde.surg)
+```
+Using BIC score instead, which penalizes more covariates more intensely than AIC, we see that our previous model is actually preferable, so we will stop adding covariates at Surg. 
+
+```{r}
+anova(colon.rndes.sex)
+```
+We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
+
+```{r}
+colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
+ggsurvplot(colon.fit, colon.recur, legend.labs=c('Level 1','Level 2', 'Level 3'), fun='cloglog') + labs(x='Days until Recurrence')
+
+cox.zph(colon.recur.cox)
+```
+The proportional hazards assumption seems violated from the log-log plot for Baseline and low toxicity treatment, but we have already observed that those two treatments do not significantly differ in hazard rates. It appears that the difference between low toxicity and medium toxicity does not violate the proportional hazards assumption, and we verify this using the Schoenfield residuals test attaining a p-value of 0.86 for the rx covariate. 
+
+```{r}
+
+cox.zph(colon.rnde.surg)
+colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.recur)
+ggsurvplot(colon.fit.differ, colon.recur, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
+```
+From our cox ZPH test we see that differ could potentially be violating the proportional hazards assumption with a p-value of 0.00024 and we verify this using a log-log plot. The assumption seems to hold for the difference between 'poor' and 'well' and 'moderate' but not for the difference between 'well' and 'moderate'
