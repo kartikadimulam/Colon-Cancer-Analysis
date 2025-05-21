@@ -12,10 +12,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(survival)
 library(survminer)
-
+library(ggplot2) 
+library(tidyr)
+library(xfun)
 
 
 head(colon)
+colon=colon
 colon_fit = survfit(Surv(time, status) ~ rx, colon)
 
 ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
@@ -32,4 +35,13 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
 
 2. Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
 
-3. h
+```{r}
+colon.recur = colon[colon$etype==1,]
+colon.death = colon[colon$etype==2,]
+
+colon.recur.cox = coxph(Surv(time,status)~rx, colon.recur)
+anova(colon.recur.cox)
+```
+Low toxicity treatment doesn't have a significant effect on recurrence, but moderately toxic treatment does. 
+
+
