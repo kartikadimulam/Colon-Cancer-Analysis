@@ -156,6 +156,7 @@ anova(colon.rndes.sex)
 We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
 
 ### Death Subset 
+Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
 ```{r, include = FALSE}
 death.rx.sex = coxph(Surv(time,status)~rx + sex, colon.death)
 death.rx.age = coxph(Surv(time,status)~rx + age, colon.death)
@@ -171,8 +172,68 @@ death.rx.node4 = coxph(Surv(time,status)~rx + node4, colon.death)
 AIC(death.rx.sex, death.rx.age, death.rx.obstruct, death.rx.perfor,
     death.rx.adhere, death.rx.nodes, death.rx.differ, death.rx.extent,
     death.rx.surg, death.rx.node4)
+# The best model in the data for patients with a recorded death adds nodes with an AIC of 5620.639. The second best model adds differ with an AIC of 5678.121 and the third best model adds node4 with an AIC of 5764.921. 
 ```
-The best model in the data for patients with a recorded death adds nodes with an AIC of 5620.639. The second best adds differ with an AIC of 5678.121 and the third best model adds node4 with an AIC of 5764.921. 
+
+
+```{r, include = FALSE}
+death.rx.nodes.differ = coxph(Surv(time,status)~rx + nodes + differ, colon.death)
+death.rx.nodes.sex = coxph(Surv(time,status)~rx + nodes + sex, colon.death)
+death.rx.nodes.age = coxph(Surv(time,status)~rx + nodes + age, colon.death)
+death.rx.nodes.obstruct = coxph(Surv(time,status)~rx + nodes + obstruct, colon.death)
+death.rx.nodes.perfor = coxph(Surv(time,status)~rx + nodes + perfor, colon.death)
+death.rx.nodes.adhere = coxph(Surv(time,status)~rx + nodes + adhere, colon.death)
+death.rx.nodes.extent = coxph(Surv(time,status)~rx + nodes + extent, colon.death)
+death.rx.nodes.surg = coxph(Surv(time,status)~rx + nodes + surg, colon.death)
+
+AIC(death.rx.nodes.differ, death.rx.nodes.sex, death.rx.nodes.age, death.rx.nodes.obstruct, death.rx.nodes.perfor, death.rx.nodes.adhere, death.rx.nodes.extent, death.rx.nodes.surg)
+# After adding differ we got an AIC of 6458.958.
+```
+
+```{r, include = FALSE}
+death.rnd.sex = coxph(Surv(time,status)~rx + nodes + differ + sex, colon.death)
+death.rnd.age  = coxph(Surv(time,status)~rx + nodes + differ + age, colon.death)
+death.rnd.obstruct  = coxph(Surv(time,status)~rx + nodes + differ + obstruct, colon.death)
+death.rnd.perfor  = coxph(Surv(time,status)~rx + nodes + differ +perfor , colon.death)
+death.rnd.adhere = coxph(Surv(time,status)~rx + nodes + differ +adhere , colon.death)
+death.rnd.extent = coxph(Surv(time,status)~rx + nodes + differ + extent, colon.death)
+death.rnd.surg  = coxph(Surv(time,status)~rx + nodes + differ +surg , colon.death)
+
+AIC(death.rnd.sex, death.rnd.age, death.rnd.obstruct, death.rnd.perfor, death.rnd.adhere, death.rnd.extent, death.rnd.surg)
+# Adding extent give us an AIC of 5441.828.
+```
+
+```{r, include = FALSE}
+death.rnde.sex = coxph(Surv(time,status)~rx + nodes + differ + extent + sex, colon.death)
+death.rnde.age = coxph(Surv(time,status)~rx + nodes + differ + extent + age, colon.death)
+death.rnde.obstruct = coxph(Surv(time,status)~rx + nodes + differ + extent + obstruct, colon.death)
+death.rnde.perfor = coxph(Surv(time,status)~rx + nodes + differ + extent + perfor, colon.death)
+death.rnde.adhere = coxph(Surv(time,status)~rx + nodes + differ + extent + adhere, colon.death)
+death.rnde.surg = coxph(Surv(time,status)~rx + nodes + differ + extent + surg, colon.death)
+
+AIC(death.rnde.sex, death.rnde.age, death.rnde.obstruct, death.rnde.perfor,
+    death.rnde.adhere, death.rnde.surg)
+
+# Adding surg gives an AIC of 5438.274.
+```
+
+```{r, include = FALSE}
+death.rndes.sex = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + sex, colon.death)
+death.rndes.age = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + age, colon.death)
+death.rndes.obstruct = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + obstruct, colon.death)
+death.rndes.perfor = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + perfor, colon.death)
+death.rndes.adhere = coxph(Surv(time,status)~rx + nodes + differ + extent + surg + adhere, colon.death)
+
+AIC(death.rndes.sex, death.rndes.age, death.rndes.obstruct, death.rndes.perfor, death.rndes.adhere)
+# Adding obstruct gives us an AIC of 5436.907, which is different from the recur data, where at this point, adding sex as out next covariate gave us the lower AIC score. 
+```
+
+```{r, include = FALSE}
+BIC(death.rnde.surg, death.rndes.obstruct)
+# By using BIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. 
+```
+
+
 
 
 ## Checking Proportional Hazards Assumptions
