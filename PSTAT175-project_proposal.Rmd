@@ -190,4 +190,4 @@ cox.zph(colon.rnde.surg)
 colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.recur)
 ggsurvplot(colon.fit.differ, colon.recur, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
 ```
-From our cox ZPH test we see that differ could potentially be violating the proportional hazards assumption with a p-value of 0.00024 and we verify this using a log-log plot. The assumption seems to hold for the difference between 'poor' and 'well' and 'moderate' but not for the difference between 'well' and 'moderate'
+From our cox ZPH test we see that differ could potentially be violating the proportional hazards assumption with a p-value of 0.00024 and we verify this using a log-log plot. The assumption seems to hold for the difference between 'poor' and 'well' and 'moderate' but not for the difference between 'well' and 'moderate'. 
