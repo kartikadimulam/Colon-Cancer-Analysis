@@ -31,10 +31,13 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
            font.y = c(14, "bold"))
 ```
 
+## Overview of Dataset
 1. Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as sex, age, obstruct(was the colon obstructed by the tumor?), perfor (was the colon perforated?), adhere (is the tumor on nearby organs?), nodes (how many lymph nodes have cancer?), differ (is the tumor differentiated?), extent (how much has the tumor spread locally?), surg (how long from surgery to registration?), node4 (indicator variable of more than 4 positive lymph nodes), and etype (did subject's cancer recur or death). The scientific questions we are trying to answer are: how do these covariates affect the probability of surival? are there some covariates that are not strong predictors and if so which ones? How much is survival probability affected by different covariate values? Do coviarates affect survival probability differently over time? Are there important interactions between these covariates? 
 
-2. Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
+## Bibliography
+Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
 
+## Splitting Data 
 ```{r}
 colon.recur = colon[colon$etype==1,]
 colon.death = colon[colon$etype==2,]
@@ -42,19 +45,30 @@ colon.death = colon[colon$etype==2,]
 colon.recur.cox = coxph(Surv(time,status)~rx, colon.recur)
 summary(colon.recur.cox)
 anova(colon.recur.cox)
+
+colon.death.cox = coxph(Surv(time, status) ~ rx, colon.death)
+summary(colon.death.cox)
+anova(colon.death.cox)
 ```
-Low toxicity treatment doesn't have a significant effect on recurrence, but moderately toxic treatment does. Overall the rx covariate is significant on time until recurrence
+Low toxicity treatment doesn't have a significant effect on recurrence or death, but moderately toxic treatment does. Overall the rx covariate is significant on time until recurrence and death. 
+
+
 
 ```{r}
 colon.recur.CI = exp(confint(colon.recur.cox))
+colon.death.CI = exp(confint(colon.death.cox))
 ```
-Again the CIs show that Lev is not significant but Lev+5FU is significant in reducing time until recurrence. Our hazard ratio CI for Lev treatment contains 1 but our hazard ratio CI for Lev+5FU treatment does not. We are 95% confident that Lev+5FU treatment significantly affects time until recurrence. 
+Again the CIs show that Lev is not significant but Lev+5FU is significant in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 but our hazard ratio CI for Lev+5FU treatment does not. We are 95% confident that Lev+5FU treatment significantly affects time until recurrence. 
 
 ```{r}
 exp(coef(colon.recur.cox))
+exp(coef(colon.death.cox))
 ```
-At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence.
+At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
 
+## Model Fitting 
+### Recurrence of Cancer Subset
+Using forward stepwise selection  and AIC, we can find the most relevant covariates to build and finds the best model at predicting survival times. We first perform this process on the subset of data where there was a recurrence of cancer in patients. 
 ```{r}
 colon.rx.sex = coxph(Surv(time,status)~rx + sex, colon.recur)
 colon.rx.age = coxph(Surv(time,status)~rx + age, colon.recur)
@@ -141,6 +155,27 @@ anova(colon.rndes.sex)
 ```
 We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
 
+### Death Subset 
+```{r, include = FALSE}
+death.rx.sex = coxph(Surv(time,status)~rx + sex, colon.death)
+death.rx.age = coxph(Surv(time,status)~rx + age, colon.death)
+death.rx.obstruct = coxph(Surv(time,status)~rx + obstruct, colon.death)
+death.rx.perfor = coxph(Surv(time,status)~rx + perfor, colon.death)
+death.rx.adhere = coxph(Surv(time,status)~rx + adhere, colon.death)
+death.rx.nodes = coxph(Surv(time,status)~rx + nodes, colon.death)
+death.rx.differ = coxph(Surv(time,status)~rx + differ, colon.death)
+death.rx.extent = coxph(Surv(time,status)~rx + extent, colon.death)
+death.rx.surg = coxph(Surv(time,status)~rx + surg, colon.death)
+death.rx.node4 = coxph(Surv(time,status)~rx + node4, colon.death)
+
+AIC(death.rx.sex, death.rx.age, death.rx.obstruct, death.rx.perfor,
+    death.rx.adhere, death.rx.nodes, death.rx.differ, death.rx.extent,
+    death.rx.surg, death.rx.node4)
+```
+The best model in the data for patients with a recorded death adds nodes with an AIC of 5620.639. The second best adds differ with an AIC of 5678.121 and the third best model adds node4 with an AIC of 5764.921. 
+
+
+## Checking Proportional Hazards Assumptions
 ```{r}
 colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
 ggsurvplot(colon.fit, colon.recur, legend.labs=c('Level 1','Level 2', 'Level 3'), fun='cloglog') + labs(x='Days until Recurrence')
