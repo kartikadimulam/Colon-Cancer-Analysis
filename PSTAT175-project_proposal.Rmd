@@ -50,20 +50,34 @@ colon.death.cox = coxph(Surv(time, status) ~ rx, colon.death)
 summary(colon.death.cox)
 anova(colon.death.cox)
 ```
-Low toxicity treatment doesn't have a significant effect on recurrence or death, but moderately toxic treatment does. Overall the rx covariate is significant on time until recurrence and death. 
+In our time until recurrence model, treatment using Levamisole compared with the baseline effect has a p-value of 0.888. This teaches us that this low-toxicity compound is not effective in reducing the time until recurrence for colon cancer patients.
+
+However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.00002. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
+
+Overall, we observe using a likelihood ratio test p-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
+
+In our time until death model, treatment using Levamisole compared with the baseline effect has a p-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
+
+However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. 
+
+Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
 
-
+##Confidence Intervals
 ```{r}
 colon.recur.CI = exp(confint(colon.recur.cox))
 colon.death.CI = exp(confint(colon.death.cox))
 ```
-Again the CIs show that Lev is not significant but Lev+5FU is significant in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 but our hazard ratio CI for Lev+5FU treatment does not. We are 95% confident that Lev+5FU treatment significantly affects time until recurrence. 
+Again the CIs show that Levamisole treatment is not significant but Levamisole+5FU treatment
+is effective in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for both models. We are 95% confident that Lev+5FU treatment significantly affects both time until recurrence and time until death. 
 
+
+##Hazard Ratio
 ```{r}
 exp(coef(colon.recur.cox))
 exp(coef(colon.death.cox))
 ```
+
 At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
 
 ## Model Fitting 
@@ -156,6 +170,8 @@ anova(colon.rndes.sex)
 We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
 
 
+##Checking Proportional Hazards Assumptions
+
 ```{r}
 colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
 ggsurvplot(colon.fit, colon.recur, legend.labs=c('Level 1','Level 2', 'Level 3'), fun='cloglog') + labs(x='Days until Recurrence')
@@ -203,6 +219,7 @@ AIC(death.rx.sex, death.rx.age, death.rx.obstruct, death.rx.perfor,
     death.rx.surg, death.rx.node4)
 
 ```
+
 The best model in the data for patients with a recorded death adds nodes with an AIC of 5620.639. The second best model adds differ with an AIC of 5678.121 and the third best model adds node4 with an AIC of 5764.921. 
 
 ```{r, include = FALSE}
@@ -216,8 +233,10 @@ death.rx.nodes.extent = coxph(Surv(time,status)~rx + nodes + extent, colon.death
 death.rx.nodes.surg = coxph(Surv(time,status)~rx + nodes + surg, colon.death)
 
 AIC(death.rx.nodes.differ, death.rx.nodes.sex, death.rx.nodes.age, death.rx.nodes.obstruct, death.rx.nodes.perfor, death.rx.nodes.adhere, death.rx.nodes.extent, death.rx.nodes.surg)
-# After adding differ we got an AIC of 6458.958.
+
 ```
+
+After adding differ we got an AIC of 5458.958.
 
 ```{r, include = FALSE}
 death.rnd.sex = coxph(Surv(time,status)~rx + nodes + differ + sex, colon.death)
@@ -266,23 +285,45 @@ Adding obstruct gives us an AIC of 5436.907, which is different from the recur d
 BIC(death.rnde.surg, death.rndes.obstruct)
 
 ```
-By using BIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. 
-
-##Checking Proportional Hazards Assumptions
-
+By using BIC, which penalizes # of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model.  
 
 ```{r}
-colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
-ggsurvplot(colon.fit, colon.recur, legend.labs=c('Level 1','Level 2', 'Level 3'), fun='cloglog') + labs(x='Days until Recurrence')
+cox.zph(death.rnde.surg)
 
-cox.zph(colon.recur.cox)
+colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.death)
+ggsurvplot(colon.fit.differ, colon.death, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
 ```
-The proportional hazards assumption seems violated from the log-log plot for Baseline and low toxicity treatment, but we have already observed that those two treatments do not significantly differ in hazard rates. It appears that the difference between low toxicity and medium toxicity does not violate the proportional hazards assumption, and we verify this using the Schoenfield residuals test attaining a p-value of 0.86 for the rx covariate. 
+
+We can also observe, that similarly to our recurrence model the differentiation covariate again violates the PH assumption. We can verify this using a log-log plot, which shows many cross-over points bewteen 'moderate' differentiation and 'well' differentiation. We will remedy this using a stratification on the differentiation variable. 
 
 ```{r}
-
-cox.zph(colon.rnde.surg)
-colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.recur)
-ggsurvplot(colon.fit.differ, colon.recur, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
+death.rnde.surg =  coxph(Surv(time,status)~rx + nodes + strata(differ) + extent + surg, colon.death)
+AIC(death.rnde.surg)
 ```
-From our cox ZPH test we see that differ could potentially be violating the proportional hazards assumption with a p-value of 0.00024 and we verify this using a log-log plot. The assumption seems to hold for the difference between 'poor' and 'well' and 'moderate' but not for the difference between 'well' and 'moderate'. 
+
+Our AIC drops to 4769.91 after stratifying on the differentiation covariate instead of simply using it as a covariate in our model. This is a significant decrease and proves that our previous model had an alarming violation of the PH assumption. 
+
+```{r}
+cox.zph(death.rnde.surg)
+```
+
+We run cox ZPH again on this new stratified cox PH model to ensure no violations and observe that we have successfully remedied our issue. All of our p-values from the cox ZPH test are above 0.05. 
+
+
+##Recurrent Events Model
+
+```{r}
+for(i in 1:1858){
+  ifelse(colon$etype[i]==2, colon$start[i] <- colon$time[i+1], colon$start[i] <- 0 ) }
+colon$stop = colon$time
+colon$stop = ifelse(colon$stop<=colon$start, colon$stop<-colon$stop+0.0001, colon$stop<-colon$stop)
+
+colon.cox = coxph(Surv(start,stop,status)~rx, colon)
+summary(colon.cox)
+```
+In our recurrent events model, we again observe that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death. 
+```{r}
+
+```
+
+
