@@ -9,18 +9,45 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include = FALSE}
 library(survival)
 library(survminer)
 library(ggplot2) 
 library(tidyr)
 library(xfun)
+```
 
+# 1. Introduction
+## Overview of the Dataset
+Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
+  - sex: male (1) or female (0) \
+  - age: in years \
+  - obstruct: was the colon obstructed by the tumor? \
+  - perfor: was the colon perforated? \
+  - adhere: is the tumor on nearby organs? \
+  - nodes: how many lymph nodes have cancer? \
+  - differ: is the tumor differentiated? \
+  - extent: how much has the tumor spread locally? \
+  - surg: how long from surgery to registration? \
+  - node4: indicator variable of more than 4 positive lymph nodes \
+  - etype: did subject's cancer recur or death \
+  
+## Motivating Questions 
+The scientific questions we are trying to answer are: \
+  1. Does the type of treatment affect survival times? \
+  2. Are there some covariates that are not strong predictors and if so which ones? \
+  3. How much is survival probability affected by different covariate values? \
+  4. Do covariates affect survival probability differently over time? \
+  5. Are there important interactions between these covariates? \
 
+```{r, include = FALSE}
 head(colon)
+```
+
+## Survival Probability of Treatments 
+```{r, warning = FALSE}
 colon=colon
 colon_fit = survfit(Surv(time, status) ~ rx, colon)
-
 ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
            ylab='Survival Prob.',surv.median.line = 'hv',palette = "Dark2", 
            conf.int = TRUE,    
@@ -31,11 +58,6 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
            font.y = c(14, "bold"))
 ```
 
-## Overview of Dataset
-1. Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as sex, age, obstruct(was the colon obstructed by the tumor?), perfor (was the colon perforated?), adhere (is the tumor on nearby organs?), nodes (how many lymph nodes have cancer?), differ (is the tumor differentiated?), extent (how much has the tumor spread locally?), surg (how long from surgery to registration?), node4 (indicator variable of more than 4 positive lymph nodes), and etype (did subject's cancer recur or death). The scientific questions we are trying to answer are: how do these covariates affect the probability of surival? are there some covariates that are not strong predictors and if so which ones? How much is survival probability affected by different covariate values? Do coviarates affect survival probability differently over time? Are there important interactions between these covariates? 
-
-## Bibliography
-Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
 
 ## Splitting Data 
 ```{r}
@@ -63,7 +85,7 @@ However, the p-value of the treatment which combines 5FU (moderately toxic)  tre
 Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
 
-##Confidence Intervals
+## Confidence Intervals
 ```{r}
 colon.recur.CI = exp(confint(colon.recur.cox))
 colon.death.CI = exp(confint(colon.death.cox))
@@ -72,7 +94,7 @@ Again the CIs show that Levamisole treatment is not significant but Levamisole+5
 is effective in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for both models. We are 95% confident that Lev+5FU treatment significantly affects both time until recurrence and time until death. 
 
 
-##Hazard Ratio
+## Hazard Ratio
 ```{r}
 exp(coef(colon.recur.cox))
 exp(coef(colon.death.cox))
@@ -80,10 +102,10 @@ exp(coef(colon.death.cox))
 
 At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
 
-## Model Fitting 
-### Recurrence of Cancer Subset
+# 2. Model Fitting 
+## Recurrence of Cancer Subset
 Using forward stepwise selection  and AIC, we can find the most relevant covariates to build and finds the best model at predicting survival times. We first perform this process on the subset of data where there was a recurrence of cancer in patients. 
-```{r}
+```{r, warning = FALSE}
 colon.rx.sex = coxph(Surv(time,status)~rx + sex, colon.recur)
 colon.rx.age = coxph(Surv(time,status)~rx + age, colon.recur)
 colon.rx.obstruct = coxph(Surv(time,status)~rx + obstruct, colon.recur)
@@ -102,7 +124,7 @@ AIC(colon.rx.sex, colon.rx.age, colon.rx.obstruct, colon.rx.perfor,
 
 The best model is adding nodes as a covariate, attaining an AIC of 5827.4. The second best model is differentiation of tumor and the third best is node4 (more than 4 positive lymph nodes). However, we should not include node4 since it is highly correlated with nodes. They are essentially measuring the same thing. 
 
-```{r}
+```{r,  warning = FALSE}
 colon.rx.nodes.differ = coxph(Surv(time,status)~rx + nodes + differ, colon.recur)
 colon.rx.nodes.sex = coxph(Surv(time,status)~rx + nodes + sex, colon.recur)
 colon.rx.nodes.age = coxph(Surv(time,status)~rx + nodes + age, colon.recur)
@@ -128,7 +150,7 @@ AIC(colon.rnd.sex, colon.rnd.age, colon.rnd.obstruct, colon.rnd.perfor, colon.rn
 ```
 Adding extent as the next covariate is the best model, attaining an AIC of 5658.7
 
-```{r}
+```{r,  warning = FALSE}
 BIC(colon.rnd.extent,colon.rx.nodes.differ, colon.rx.nodes, colon.recur.cox)
 ```
 Using BIC as a sanity check helps us to verify that adding extent as another covariate is still beneficial to our model's prediction accuracy while avoiding overfitting (too many covariates), attaining a BIC of 5679.21. 
@@ -170,21 +192,25 @@ anova(colon.rndes.sex)
 We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
 
 
-##Checking Proportional Hazards Assumptions
+### Checking Proportional Hazards Assumptions
 
 ```{r}
 colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
-ggsurvplot(colon.fit, colon.recur, legend.labs=c('Level 1','Level 2', 'Level 3'), fun='cloglog') + labs(x='Days until Recurrence')
+ggsurvplot(colon.fit, colon.recur, 
+           legend.labs=c('Level 1','Level 2', 'Level 3'), 
+           fun='cloglog') + 
+  labs(x='Days until Recurrence')
 
 cox.zph(colon.recur.cox)
 ```
 The proportional hazards assumption seems violated from the log-log plot for Baseline and low toxicity treatment, but we have already observed that those two treatments do not significantly differ in hazard rates. It appears that the difference between low toxicity and medium toxicity does not violate the proportional hazards assumption, and we verify this using the Schoenfield residuals test attaining a p-value of 0.86 for the rx covariate. 
 
 ```{r}
-
 cox.zph(colon.rnde.surg)
 colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.recur)
-ggsurvplot(colon.fit.differ, colon.recur, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
+ggsurvplot(colon.fit.differ, colon.recur, 
+           legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') +
+  labs(x='Days until Recurrence')
 ```
 From our cox ZPH test we see that the differentiation of tumor covariate violates the proportional hazards assumption with a p-value of 0.00024 and we verify this using a log-log plot. We can observe many cross-over points between the plot for 'moderate' differentiation and 'well' differentiation. To account for this violation, we will attempt to stratify on the differentiation covariate and produce a stratified Cox PH model. 
 
@@ -200,7 +226,7 @@ To verify again that none of our covariates violate this assumption, we will run
 
 
 
-### Death Subset 
+## Death Subset 
 Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
 ```{r, include = FALSE}
 death.rx.sex = coxph(Surv(time,status)~rx + sex, colon.death)
@@ -285,13 +311,16 @@ Adding obstruct gives us an AIC of 5436.907, which is different from the recur d
 BIC(death.rnde.surg, death.rndes.obstruct)
 
 ```
-By using BIC, which penalizes # of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model.  
+By using BIC, which penalizes the number of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model.  
+
+### Checking Proportional Hazards Assumptions
 
 ```{r}
 cox.zph(death.rnde.surg)
 
 colon.fit.differ = survfit(Surv(time, status) ~ differ, colon.death)
-ggsurvplot(colon.fit.differ, colon.death, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + labs(x='Days until Recurrence')
+ggsurvplot(colon.fit.differ, colon.death, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + 
+  labs(x='Days until Recurrence')
 ```
 
 We can also observe, that similarly to our recurrence model the differentiation covariate again violates the PH assumption. We can verify this using a log-log plot, which shows many cross-over points bewteen 'moderate' differentiation and 'well' differentiation. We will remedy this using a stratification on the differentiation variable. 
@@ -310,7 +339,8 @@ cox.zph(death.rnde.surg)
 We run cox ZPH again on this new stratified cox PH model to ensure no violations and observe that we have successfully remedied our issue. All of our p-values from the cox ZPH test are above 0.05. 
 
 
-##Recurrent Events Model
+# 3. Advanced Models 
+## Recurrent Events Model
 
 ```{r}
 for(i in 1:1858){
@@ -326,4 +356,7 @@ In our recurrent events model, we again observe that the Lemavisole treatment in
 
 ```
 
+
+# 4. Citations
+Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
 
