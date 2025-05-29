@@ -74,13 +74,13 @@ anova(colon.death.cox)
 ```
 In our time until recurrence model, treatment using Levamisole compared with the baseline effect has a p-value of 0.888. This teaches us that this low-toxicity compound is not effective in reducing the time until recurrence for colon cancer patients.
 
-However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.00002. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
+However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicity) is 0.00002. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
 
 Overall, we observe using a likelihood ratio test p-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
 In our time until death model, treatment using Levamisole compared with the baseline effect has a p-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
 
-However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. 
+However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
 
 Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
@@ -219,12 +219,16 @@ colon.rnde.surg = coxph(Surv(time,status)~rx + nodes + strata(differ) + extent +
 anova(colon.rnde.surg)
 cox.zph(colon.rnde.surg)
 
+mean(colon.recur$nodes, na.rm=TRUE)
+max(colon.recur$nodes, na.rm=TRUE)
 ```
 Our AIC drops to 4967.46 after stratifying on the differentiation variable instead of simply including it as a covariate in our model. This is a significant decrease in AIC most likely due to the fact that differentation should have never been included as a covariate in the model, as it violated the proportional hazards assumption. 
 
 To verify again that none of our covariates violate this assumption, we will run the Cox ZPH test on our new stratified model. We observe that all of our p-values are greater than 0.05 and we can keep them in our model as covariates. 
 
+In our final cox PH model, for recurrence, we observe numerous interesting effects of the covariates. The most important, of course, is that the combination of low-toxicity Levamisole treatment and medium-toxicity 5FU treatment is effective in reducing the hazard rate by a factor of 0.601. Other effects that are notable are that of the # of lymph nodes with detectable cancer. We see from our model output that with every additional lymph node, the hazard rate increases by a factor of 1.078. This is not a huge effect, but it is important to note that the # of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes. We see a larger effect for the extent covariate which measures the extent of local spread using 4 levels. For each level increase, the hazard rate increases significantly by a factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
 
+Another influential covariate in our model is surg, which is a binary indicator of the time from surgery to registration. Patients that had a long time have a hazard rate that is 1.28 times the baseline hazard. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
 ## Death Subset 
 Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
@@ -343,15 +347,18 @@ We run cox ZPH again on this new stratified cox PH model to ensure no violations
 ## Recurrent Events Model
 
 ```{r}
-for(i in 1:1858){
-  ifelse(colon$etype[i]==2, colon$start[i] <- colon$time[i+1], colon$start[i] <- 0 ) }
+colon$start=0
 colon$stop = colon$time
-colon$stop = ifelse(colon$stop<=colon$start, colon$stop<-colon$stop+0.0001, colon$stop<-colon$stop)
 
-colon.cox = coxph(Surv(start,stop,status)~rx, colon)
+colon.cox = coxph(Surv(start,stop,status)~rx + strata(etype), colon)
 summary(colon.cox)
+anova(colon.cox)
 ```
-In our recurrent events model, we again observe that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death. 
+To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use the marginal recurrent event approach, since each event is of a different nature. The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. Therefore, each start time will be 0 and each stop time will be time of death or time of recurrence. 
+
+In our recurrent events model, we again observe with a p-value of 0.788 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of ~ 0. 
+
+
 ```{r}
 
 ```
