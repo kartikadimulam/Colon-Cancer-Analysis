@@ -19,6 +19,9 @@ library(xfun)
 
 # 1. Introduction
 ## Overview of the Dataset
+
+We are studying the Chemotherapy for Stage B/C colon cancer dataset from the `survival` package in R. This dataset comes from one of the first successful trials of chemotherapy for colon cancer. It examines the impact of treating patients with just a compound called Levamisole or a combination of it and 5-FU, a moderately toxic chemotherapy agent, or neither. Each patient has two records, one for recurrence and one for death, which we will take into account in our analysis.
+
 Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
   - sex: male (1) or female (0) \
   - age: in years \
