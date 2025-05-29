@@ -23,21 +23,21 @@ library(xfun)
 We are studying the Chemotherapy for Stage B/C colon cancer dataset from the `survival` package in R (Laurie et al., 1989). This dataset comes from one of the first successful trials of chemotherapy for colon cancer. It examines the impact of treating patients with just a compound called Levamisole or a combination of it and 5-FU, a moderately toxic chemotherapy agent, or neither. Each patient has two records, one for recurrence and one for death, which we will take into account in our analysis.
 
 Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
-  - sex: male (1) or female (0) \
-  - age: in years \
-  - obstruct: was the colon obstructed by the tumor? \
-  - perfor: was the colon perforated? \
-  - adhere: is the tumor on nearby organs? \
-  - nodes: how many lymph nodes have cancer? \
-  - differ: is the tumor differentiated? \
-  - extent: how much has the tumor spread locally? \
-  - surg: how long from surgery to registration? \
-  - node4: indicator variable of more than 4 positive lymph nodes \
-  - etype: did subject's cancer recur or death \
+  - `sex`: male (1) or female (0) \
+  - `age`: in years \
+  - `obstruct`: was the colon obstructed by the tumor? \
+  - `perfor`: was the colon perforated? \
+  - `adhere`: is the tumor on nearby organs? \
+  - `nodes`: how many lymph nodes have cancer? \
+  - `differ`: is the tumor differentiated? \
+  - `extent`: how much has the tumor spread locally? \
+  - `surg`: how long from surgery to registration? \
+  - `node4`: indicator variable of more than 4 positive lymph nodes \
+  - `etype`: did subject's cancer recur or death \
   
 ## Motivating Questions 
 The scientific questions we are trying to answer are: \
-  1. Does the type of treatment affect survival times? \
+  1. Does the type of treatment (levamisole or 5-FU) affect survival times? \
   2. Are there some covariates that are not strong predictors and if so which ones? \
   3. How much is survival probability affected by different covariate values? \
   4. Do covariates affect survival probability differently over time? \
