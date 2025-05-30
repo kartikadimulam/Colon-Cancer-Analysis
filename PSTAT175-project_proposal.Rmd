@@ -359,12 +359,24 @@ anova(colon.cox)
 ```
 To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use the marginal recurrent event approach, since each event is of a different nature. The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. Therefore, each start time will be 0 and each stop time will be time of death or time of recurrence. 
 
-In our recurrent events model, we again observe with a p-value of 0.788 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of ~ 0. 
+In our recurrent events model, we again observe with a p-value of 0.788 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of ~ 0. Similarly to our recurrence and death analyses which were conducted separately, we reach the same conclusion that is noted by the researchers of the original study (Laurie 1989).
 
 
 ```{r}
-
+colon.CI = exp(confint(colon.cox))
+colon.CI
 ```
+We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.843, 1.139] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.545,0.757] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
+
+```{r}
+exp(coef(colon.cox))
+```
+
+The instantaneous hazard rate for Levamisole+5FU treatment is 0.642 times as large as the baseline hazard rate. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
+
+###Adding Covariates to the combined data set
+
+Again using forward stepwise selection, AIC scores, and verifying AIC scores using BIC when improvements are minimal, we will add the other covariates into our full model. 
 
 
 # 4. Citations
