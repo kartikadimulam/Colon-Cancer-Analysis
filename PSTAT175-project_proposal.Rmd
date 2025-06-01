@@ -226,11 +226,11 @@ cox.zph(colon.rnde.surg)
 mean(colon.recur$nodes, na.rm=TRUE)
 max(colon.recur$nodes, na.rm=TRUE)
 ```
-Our AIC drops to 4967.46 after stratifying on the differentiation variable instead of simply including it as a covariate in our model. This is a significant decrease in AIC most likely due to the fact that differentation should have never been included as a covariate in the model, as it violated the proportional hazards assumption. 
+Our AIC drops to 4967.46 after stratifying on the differentiation variable instead of simply including it as a covariate in our model. This is a significant decrease in AIC most likely due to the fact that differentiation should have never been included as a covariate in the model, as it violated the proportional hazards assumption. 
 
 To verify again that none of our covariates violate this assumption, we will run the Cox ZPH test on our new stratified model. We observe that all of our p-values are greater than 0.05 and we can keep them in our model as covariates. 
 
-In our final cox PH model, for recurrence, we observe numerous interesting effects of the covariates. The most important, of course, is that the combination of low-toxicity Levamisole treatment and medium-toxicity 5FU treatment is effective in reducing the hazard rate by a factor of 0.601. Other effects that are notable are that of the # of lymph nodes with detectable cancer. We see from our model output that with every additional lymph node, the hazard rate increases by a factor of 1.078. This is not a huge effect, but it is important to note that the # of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes. We see a larger effect for the extent covariate which measures the extent of local spread using 4 levels. For each level increase, the hazard rate increases significantly by a factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
+In our final cox PH model, for recurrence, we observe numerous interesting effects of the covariates. The most important, of course, is that the combination of low-toxicity Levamisole treatment and medium-toxicity 5FU treatment is effective in reducing the hazard rate by a factor of 0.601. Other effects that are notable are that of the number of lymph nodes with detectable cancer. We see from our model output that with every additional lymph node, the hazard rate increases by a factor of 1.078. This is not a huge effect, but it is important to note that the number of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes. We see a larger effect for the extent covariate which measures the extent of local spread using 4 levels. For each level increase, the hazard rate increases significantly by a factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
 
 Another influential covariate in our model is surg, which is a binary indicator of the time from surgery to registration. Patients that had a long time have a hazard rate that is 1.28 times the baseline hazard. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
@@ -334,7 +334,7 @@ ggsurvplot(colon.fit.differ, colon.death, legend.labs=c('Well','Moderate', 'Poor
 We can also observe, that similarly to our recurrence model the differentiation covariate again violates the PH assumption. We can verify this using a log-log plot, which shows many cross-over points bewteen 'moderate' differentiation and 'well' differentiation. We will remedy this using a stratification on the differentiation variable. 
 
 ```{r}
-death.rnde.surg =  coxph(Surv(time,status)~rx + nodes + strata(differ) + extent + surg, colon.death)
+death.rnde.surg <- coxph(Surv(time,status)~rx + nodes + strata(differ) + extent + surg, colon.death)
 AIC(death.rnde.surg)
 ```
 
@@ -375,10 +375,107 @@ exp(coef(colon.cox))
 
 The instantaneous hazard rate for Levamisole+5FU treatment is 0.642 times as large as the baseline hazard rate. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
 
-###Adding Covariates to the combined data set
+## Adding Covariates to the Combined Data Set
 
 Again using forward stepwise selection, AIC scores, and verifying AIC scores using BIC when improvements are minimal, we will add the other covariates into our full model. 
+```{r, warning = FALSE}
+full.rx.sex = coxph(Surv(start, stop,status)~rx + sex, colon)
+full.rx.age = coxph(Surv(start, stop,status)~rx + age, colon)
+full.rx.obstruct = coxph(Surv(start, stop,status)~rx + obstruct, colon)
+full.rx.perfor = coxph(Surv(start, stop,status)~rx + perfor, colon)
+full.rx.adhere = coxph(Surv(start, stop,status)~rx + adhere, colon)
+full.rx.nodes = coxph(Surv(start, stop,status)~rx + nodes, colon)
+full.rx.differ = coxph(Surv(start, stop,status)~rx + differ, colon)
+full.rx.extent = coxph(Surv(start, stop,status)~rx + extent, colon)
+full.rx.surg = coxph(Surv(start, stop, status)~rx + surg, colon)
+full.rx.node4 = coxph(Surv(start, stop,status)~rx + node4, colon)
 
+AIC(full.rx.sex, full.rx.age, full.rx.obstruct, full.rx.perfor,
+    full.rx.adhere, full.rx.nodes, full.rx.differ, full.rx.extent,
+    full.rx.surg, full.rx.node4)
+```
+Similar to our data with etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 12686.50, in our combined data set. Differ and node4 followed with the next lowest AIC scores of 12815.31 and 13019.81 respectively. 
+
+```{r, warning = FALSE}
+full.rn.sex = coxph(Surv(start, stop,status)~rx + nodes + sex, colon)
+full.rn.age = coxph(Surv(start, stop,status)~rx + nodes + age, colon)
+full.rn.obstruct = coxph(Surv(start, stop,status)~rx + nodes+  obstruct, colon)
+full.rn.perfor = coxph(Surv(start, stop,status)~rx + nodes + perfor, colon)
+full.rn.adhere = coxph(Surv(start, stop,status)~rx + nodes + adhere, colon)
+full.rn.differ = coxph(Surv(start, stop,status)~rx + nodes + differ, colon)
+full.rn.extent = coxph(Surv(start, stop,status)~rx + nodes + extent, colon)
+full.rn.surg = coxph(Surv(start, stop, status)~rx + nodes + surg, colon)
+
+AIC(full.rn.sex, full.rn.age, full.rn.obstruct, full.rn.perfor,
+    full.rn.adhere, full.rn.differ, full.rn.extent,
+    full.rn.surg)
+```
+Adding differ gives us the lowest AIC of 12342.15 after adding nodes. 
+
+```{r}
+full.rnd.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ sex, colon)
+full.rnd.age = coxph(Surv(start, stop,status)~rx + nodes + differ + age, colon)
+full.rnd.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + obstruct, colon)
+full.rnd.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + perfor, colon)
+full.rnd.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + adhere, colon)
+full.rnd.extent = coxph(Surv(start, stop,status)~rx + nodes + differ + extent, colon)
+full.rnd.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + surg, colon)
+
+
+AIC(full.rnd.sex, full.rnd.age, full.rnd.obstruct, full.rnd.perfor,
+    full.rnd.adhere, full.rnd.extent,
+    full.rnd.surg)
+```
+Adding extent as our next covariate gives us an AIC of 12306.57. 
+
+```{r}
+full.rnde.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + sex, colon)
+full.rnde.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + age, colon)
+full.rnde.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+  obstruct, colon)
+full.rnde.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ perfor, colon)
+full.rnde.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ adhere, colon)
+full.rnde.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + extent+ surg, colon)
+
+
+AIC(full.rnde.sex, full.rnde.age, full.rnde.obstruct, full.rnde.perfor,
+    full.rnde.adhere, full.rnde.surg)
+```
+Adding obstruct gives us an AIC of 12302.53. 
+
+```{r}
+full.rndeo.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + sex, colon)
+full.rndeo.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + age, colon)
+full.rndeo.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + perfor, colon)
+full.rndeo.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + adhere, colon)
+full.rndeo.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + extent+ obstruct + surg, colon)
+
+
+AIC(full.rndeo.sex, full.rndeo.age, full.rndeo.perfor,
+    full.rndeo.adhere, full.rndeo.surg)
+```
+Adding surg gives us an AIC score of 12294.01.
+
+```{r}
+BIC(full.rnde.obstruct, full.rndeo.surg)
+```
+By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 12327.44 as opposed to 12331.18 for the model without surg. We will take another step of adding covariates to see if it improves the model. 
+
+```{r}
+full.rndeos.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + surg + sex, colon)
+full.rndeos.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + surg+ age, colon)
+full.rndeos.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + surg + perfor, colon)
+full.rndeos.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + surg + adhere, colon)
+
+
+AIC(full.rndeos.sex, full.rndeos.age, full.rndeos.perfor,
+    full.rndeos.adhere)
+```
+Adding adhere gives us an AIC of 12291.93, but we will use BIC to evaluate if this addition is better than the previous model without adhere. 
+
+```{r}
+BIC(full.rndeo.surg, full.rndeos.adhere)
+```
+Looking at the BIC, we can see that the previous model without adhere has a lower BIC of 12327.44. 
 
 # 4. Citations
 Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
