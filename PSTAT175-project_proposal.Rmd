@@ -48,6 +48,7 @@ head(colon)
 ```
 
 ## Survival Probability of Treatments 
+In our first step of evaluating which treatments affect survival times, we create a Kaplan Meier estimate plot to visualize and gain a base understanding of how the 3 treatments in the dataset affect the survival probabilities of colon cancer patients. 
 ```{r, warning = FALSE}
 colon=colon
 colon_fit = survfit(Surv(time, status) ~ rx, colon)
@@ -60,7 +61,7 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
            font.x = c(14, "bold"),            
            font.y = c(14, "bold"))
 ```
-
+From the graph, we observe that the patients with the treatment that combines 5FU and Levamisole have a higher survival probability than those with no treatment and those with just the Levamisole treatment. The survival probability for patients with the Levamisole treatment seem to not have a large difference compared to those with no treatment, but the patients with no treatment have the lowest survival time. 
 
 ## Splitting Data 
 ```{r}
