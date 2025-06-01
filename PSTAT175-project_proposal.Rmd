@@ -378,7 +378,7 @@ The instantaneous hazard rate for Levamisole+5FU treatment is 0.642 times as lar
 ## Adding Covariates to the Combined Data Set
 
 Again using forward stepwise selection, AIC scores, and verifying AIC scores using BIC when improvements are minimal, we will add the other covariates into our full model. 
-```{r, warning = FALSE}
+```{r, include = FALSE}
 full.rx.sex = coxph(Surv(start, stop,status)~rx + sex, colon)
 full.rx.age = coxph(Surv(start, stop,status)~rx + age, colon)
 full.rx.obstruct = coxph(Surv(start, stop,status)~rx + obstruct, colon)
@@ -394,9 +394,9 @@ AIC(full.rx.sex, full.rx.age, full.rx.obstruct, full.rx.perfor,
     full.rx.adhere, full.rx.nodes, full.rx.differ, full.rx.extent,
     full.rx.surg, full.rx.node4)
 ```
-Similar to our data with etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 12686.50, in our combined data set. Differ and node4 followed with the next lowest AIC scores of 12815.31 and 13019.81 respectively. 
+Similar to our data subsets where etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 12686.50. Differ and node4 followed with the next lowest AIC scores of 12815.31 and 13019.81 respectively. 
 
-```{r, warning = FALSE}
+```{r, include = FALSE}
 full.rn.sex = coxph(Surv(start, stop,status)~rx + nodes + sex, colon)
 full.rn.age = coxph(Surv(start, stop,status)~rx + nodes + age, colon)
 full.rn.obstruct = coxph(Surv(start, stop,status)~rx + nodes+  obstruct, colon)
@@ -412,7 +412,7 @@ AIC(full.rn.sex, full.rn.age, full.rn.obstruct, full.rn.perfor,
 ```
 Adding differ gives us the lowest AIC of 12342.15 after adding nodes. 
 
-```{r}
+```{r, include = FALSE}
 full.rnd.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ sex, colon)
 full.rnd.age = coxph(Surv(start, stop,status)~rx + nodes + differ + age, colon)
 full.rnd.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + obstruct, colon)
@@ -428,7 +428,7 @@ AIC(full.rnd.sex, full.rnd.age, full.rnd.obstruct, full.rnd.perfor,
 ```
 Adding extent as our next covariate gives us an AIC of 12306.57. 
 
-```{r}
+```{r, include = FALSE}
 full.rnde.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + sex, colon)
 full.rnde.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + age, colon)
 full.rnde.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+  obstruct, colon)
@@ -442,7 +442,7 @@ AIC(full.rnde.sex, full.rnde.age, full.rnde.obstruct, full.rnde.perfor,
 ```
 Adding obstruct gives us an AIC of 12302.53. 
 
-```{r}
+```{r, include = FALSE}
 full.rndeo.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + sex, colon)
 full.rndeo.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + age, colon)
 full.rndeo.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + perfor, colon)
@@ -453,14 +453,14 @@ full.rndeo.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + extent+ 
 AIC(full.rndeo.sex, full.rndeo.age, full.rndeo.perfor,
     full.rndeo.adhere, full.rndeo.surg)
 ```
-Adding surg gives us an AIC score of 12294.01.
+Adding surg gives us an AIC of 12294.01.
 
-```{r}
+```{r, include. = FALSE}
 BIC(full.rnde.obstruct, full.rndeo.surg)
 ```
 By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 12327.44 as opposed to 12331.18 for the model without surg. We will take another step of adding covariates to see if it improves the model. 
 
-```{r}
+```{r, include = FALSE}
 full.rndeos.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + surg + sex, colon)
 full.rndeos.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + surg+ age, colon)
 full.rndeos.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + surg + perfor, colon)
@@ -472,10 +472,27 @@ AIC(full.rndeos.sex, full.rndeos.age, full.rndeos.perfor,
 ```
 Adding adhere gives us an AIC of 12291.93, but we will use BIC to evaluate if this addition is better than the previous model without adhere. 
 
-```{r}
+```{r, include = FALSE}
 BIC(full.rndeo.surg, full.rndeos.adhere)
 ```
-Looking at the BIC, we can see that the previous model without adhere has a lower BIC of 12327.44. 
+Looking at the BIC, we can see that the previous model without adhere has a lower BIC of 12327.44. Our final model for the combined dataset includes the covariates rx, nodes, differ, extent, obstruct, and surg. 
+
+```{r, include = FALSE}
+anova(full.rndeo.surg)
+```
+
+```{r}
+cox.zph(full.rndeo.surg)
+```
+Using a cox ZPH test, we can see that differ and obstruct violate the proportionality assumption because their p-values are less than 0.05 (7.1e-06 and 0.0022) meaning they are time dependent covariates that we need to take care of through strata.  
+
+```{r}
+comb.strat <- coxph(Surv(start, stop, status) ~ rx + nodes + strata(differ) + extent + strata(obstruct) + surg, data = colon)
+cox.zph(comb.strat)
+```
+We run cox ZPH again on the new model that stratifies differ and obstruct and see that all the p-values are greater than 0.05 so we do not violate the proportionality assumption. 
+
+
 
 # 4. Citations
 Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
