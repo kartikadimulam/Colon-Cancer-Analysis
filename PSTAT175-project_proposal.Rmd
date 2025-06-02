@@ -20,7 +20,7 @@ library(xfun)
 # 1. Introduction
 ## Overview of the Dataset
 
-We are studying the Chemotherapy for Stage B/C colon cancer dataset from the `survival` package in R (Laurie et al., 1989). This dataset comes from one of the first successful trials of chemotherapy for colon cancer. It examines the impact of treating patients with just a compound called Levamisole or a combination of it and 5-FU, a moderately toxic chemotherapy agent, or neither. Each patient has two records, one for recurrence and one for death, which we will take into account in our analysis.
+We are studying the Chemotherapy for Stage B/C `colon` dataset from the `survival` package in R (Laurie et al., 1989). This dataset comes from one of the first successful trials of chemotherapy for colon cancer. It examines the impact of treating patients with just a compound called Levamisole or a combination of it and 5-FU, a moderately toxic chemotherapy agent, or neither. Each patient has two records, one for recurrence and one for death, which we will take into account in our analysis.
 
 Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
   - `sex`: male (1) or female (0) \
@@ -230,12 +230,17 @@ Our AIC drops to 4967.46 after stratifying on the differentiation variable inste
 
 To verify again that none of our covariates violate this assumption, we will run the Cox ZPH test on our new stratified model. We observe that all of our p-values are greater than 0.05 and we can keep them in our model as covariates. 
 
-In our final cox PH model, for recurrence, we observe numerous interesting effects of the covariates. The most important, of course, is that the combination of low-toxicity Levamisole treatment and medium-toxicity 5FU treatment is effective in reducing the hazard rate by a factor of 0.601. Other effects that are notable are that of the number of lymph nodes with detectable cancer. We see from our model output that with every additional lymph node, the hazard rate increases by a factor of 1.078. This is not a huge effect, but it is important to note that the number of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes. We see a larger effect for the extent covariate which measures the extent of local spread using 4 levels. For each level increase, the hazard rate increases significantly by a factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
+We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
 
-Another influential covariate in our model is surg, which is a binary indicator of the time from surgery to registration. Patients that had a long time have a hazard rate that is 1.28 times the baseline hazard. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
+-After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment remains a factor of 0.6.  
+- For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.078. This is not a huge effect, but it is important to note that the number of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes
+-For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
+-If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
 ## Death Subset 
+
 Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
+
 ```{r, include = FALSE}
 death.rx.sex = coxph(Surv(time,status)~rx + sex, colon.death)
 death.rx.age = coxph(Surv(time,status)~rx + age, colon.death)
@@ -319,7 +324,8 @@ Adding obstruct gives us an AIC of 5436.907, which is different from the recur d
 BIC(death.rnde.surg, death.rndes.obstruct)
 
 ```
-By using BIC, which penalizes the number of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model.  
+By using BIC, which penalizes the number of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model. 
+
 
 ### Checking Proportional Hazards Assumptions
 
@@ -345,6 +351,19 @@ cox.zph(death.rnde.surg)
 ```
 
 We run cox ZPH again on this new stratified cox PH model to ensure no violations and observe that we have successfully remedied our issue. All of our p-values from the cox ZPH test are above 0.05. 
+
+```{r}
+anova(death.rnde.surg)
+summary(death.rnde.surg)
+```
+
+We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
+
+-After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.694. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
+- For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.088
+-For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
+-If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.29.
+
 
 
 # 3. Advanced Models 
@@ -377,120 +396,133 @@ The instantaneous hazard rate for Levamisole+5FU treatment is 0.642 times as lar
 
 ## Adding Covariates to the Combined Data Set
 
-Again using forward stepwise selection, AIC scores, and verifying AIC scores using BIC when improvements are minimal, we will add the other covariates into our full model. 
+Again using forward stepwise selection, AIC scores, and verifying AIC scores using BIC when improvements are minimal, we will add the other covariates into our full model.
+
 ```{r, include = FALSE}
-full.rx.sex = coxph(Surv(start, stop,status)~rx + sex, colon)
-full.rx.age = coxph(Surv(start, stop,status)~rx + age, colon)
-full.rx.obstruct = coxph(Surv(start, stop,status)~rx + obstruct, colon)
-full.rx.perfor = coxph(Surv(start, stop,status)~rx + perfor, colon)
-full.rx.adhere = coxph(Surv(start, stop,status)~rx + adhere, colon)
-full.rx.nodes = coxph(Surv(start, stop,status)~rx + nodes, colon)
-full.rx.differ = coxph(Surv(start, stop,status)~rx + differ, colon)
-full.rx.extent = coxph(Surv(start, stop,status)~rx + extent, colon)
-full.rx.surg = coxph(Surv(start, stop, status)~rx + surg, colon)
-full.rx.node4 = coxph(Surv(start, stop,status)~rx + node4, colon)
+full.rx.sex = coxph(Surv(start, stop,status)~rx + sex + strata(etype), colon)
+full.rx.age = coxph(Surv(start, stop,status)~rx + age+ strata(etype), colon)
+full.rx.obstruct = coxph(Surv(start, stop,status)~rx + obstruct+ strata(etype), colon)
+full.rx.perfor = coxph(Surv(start, stop,status)~rx + perfor+ strata(etype), colon)
+full.rx.adhere = coxph(Surv(start, stop,status)~rx + adhere+ strata(etype), colon)
+full.rx.nodes = coxph(Surv(start, stop,status)~rx + nodes+ strata(etype), colon)
+full.rx.differ = coxph(Surv(start, stop,status)~rx + differ+ strata(etype), colon)
+full.rx.extent = coxph(Surv(start, stop,status)~rx + extent+ strata(etype), colon)
+full.rx.surg = coxph(Surv(start, stop, status)~rx + surg+ strata(etype), colon)
+full.rx.node4 = coxph(Surv(start, stop,status)~rx + node4+ strata(etype), colon)
 
 AIC(full.rx.sex, full.rx.age, full.rx.obstruct, full.rx.perfor,
     full.rx.adhere, full.rx.nodes, full.rx.differ, full.rx.extent,
     full.rx.surg, full.rx.node4)
 ```
-Similar to our data subsets where etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 12686.50. Differ and node4 followed with the next lowest AIC scores of 12815.31 and 13019.81 respectively. 
+Similar to our data subsets where etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 11443.35. Node4 follows with the next lowest AIC score of 11743.73. We will not use node4 as a covariate since it is essentially measuring the same quantity as the nodes covariate. We do not want to use highly correlated covariates in our cox PH model. 
 
 ```{r, include = FALSE}
-full.rn.sex = coxph(Surv(start, stop,status)~rx + nodes + sex, colon)
-full.rn.age = coxph(Surv(start, stop,status)~rx + nodes + age, colon)
-full.rn.obstruct = coxph(Surv(start, stop,status)~rx + nodes+  obstruct, colon)
-full.rn.perfor = coxph(Surv(start, stop,status)~rx + nodes + perfor, colon)
-full.rn.adhere = coxph(Surv(start, stop,status)~rx + nodes + adhere, colon)
-full.rn.differ = coxph(Surv(start, stop,status)~rx + nodes + differ, colon)
-full.rn.extent = coxph(Surv(start, stop,status)~rx + nodes + extent, colon)
-full.rn.surg = coxph(Surv(start, stop, status)~rx + nodes + surg, colon)
+full.rn.sex = coxph(Surv(start, stop, status) ~ rx + nodes + sex + strata(etype), colon)
+full.rn.age = coxph(Surv(start, stop, status) ~ rx + nodes + age + strata(etype), colon)
+full.rn.obstruct = coxph(Surv(start, stop, status) ~ rx + nodes + obstruct + strata(etype), colon)
+full.rn.perfor = coxph(Surv(start, stop, status) ~ rx + nodes + perfor + strata(etype), colon)
+full.rn.adhere = coxph(Surv(start, stop, status) ~ rx + nodes + adhere + strata(etype), colon)
+full.rn.differ = coxph(Surv(start, stop, status) ~ rx + nodes + differ + strata(etype), colon)
+full.rn.extent = coxph(Surv(start, stop, status) ~ rx + nodes + extent + strata(etype), colon)
+full.rn.surg = coxph(Surv(start, stop, status) ~ rx + nodes + surg + strata(etype), colon)
 
 AIC(full.rn.sex, full.rn.age, full.rn.obstruct, full.rn.perfor,
     full.rn.adhere, full.rn.differ, full.rn.extent,
     full.rn.surg)
 ```
-Adding differ gives us the lowest AIC of 12342.15 after adding nodes. 
+
+Adding differ gives us the lowest AIC of 11128.39 
 
 ```{r, include = FALSE}
-full.rnd.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ sex, colon)
-full.rnd.age = coxph(Surv(start, stop,status)~rx + nodes + differ + age, colon)
-full.rnd.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + obstruct, colon)
-full.rnd.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + perfor, colon)
-full.rnd.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + adhere, colon)
-full.rnd.extent = coxph(Surv(start, stop,status)~rx + nodes + differ + extent, colon)
-full.rnd.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + surg, colon)
+full.rnd.sex = coxph(Surv(start, stop, status) ~ rx + nodes + differ + sex + strata(etype), colon)
+full.rnd.age = coxph(Surv(start, stop, status) ~ rx + nodes + differ + age + strata(etype), colon)
+full.rnd.obstruct = coxph(Surv(start, stop, status) ~ rx + nodes + differ + obstruct + strata(etype), colon)
+full.rnd.perfor = coxph(Surv(start, stop, status) ~ rx + nodes + differ + perfor + strata(etype), colon)
+full.rnd.adhere = coxph(Surv(start, stop, status) ~ rx + nodes + differ + adhere + strata(etype), colon)
+full.rnd.extent = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + strata(etype), colon)
+full.rnd.surg = coxph(Surv(start, stop, status) ~ rx + nodes + differ + surg + strata(etype), colon)
 
 
 AIC(full.rnd.sex, full.rnd.age, full.rnd.obstruct, full.rnd.perfor,
     full.rnd.adhere, full.rnd.extent,
     full.rnd.surg)
 ```
-Adding extent as our next covariate gives us an AIC of 12306.57. 
+Adding extent as our next covariate gives us an AIC of 11091.87 
 
 ```{r, include = FALSE}
-full.rnde.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + sex, colon)
-full.rnde.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + age, colon)
-full.rnde.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+  obstruct, colon)
-full.rnde.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ perfor, colon)
-full.rnde.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ adhere, colon)
-full.rnde.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + extent+ surg, colon)
+full.rnde.sex = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + sex + strata(etype), colon)
+full.rnde.age = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + age + strata(etype), colon)
+full.rnde.obstruct = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + obstruct + strata(etype), colon)
+full.rnde.perfor = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + perfor + strata(etype), colon)
+full.rnde.adhere = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + adhere + strata(etype), colon)
+full.rnde.surg = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + surg + strata(etype), colon)
 
 
 AIC(full.rnde.sex, full.rnde.age, full.rnde.obstruct, full.rnde.perfor,
     full.rnde.adhere, full.rnde.surg)
 ```
-Adding obstruct gives us an AIC of 12302.53. 
+
+Adding surg gives us the lowest AIC of 11083.24 
 
 ```{r, include = FALSE}
-full.rndeo.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + sex, colon)
-full.rndeo.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + age, colon)
-full.rndeo.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + perfor, colon)
-full.rndeo.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + adhere, colon)
-full.rndeo.surg = coxph(Surv(start, stop, status)~rx + nodes + differ + extent+ obstruct + surg, colon)
+full.rndes.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + sex + strata(etype), colon)
+full.rndes.age = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + age + strata(etype), colon)
+full.rndes.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + perfor + strata(etype), colon)
+full.rndes.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + adhere + strata(etype), colon)
+full.rndes.obstruct = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + obstruct + strata(etype), colon)
 
 
-AIC(full.rndeo.sex, full.rndeo.age, full.rndeo.perfor,
-    full.rndeo.adhere, full.rndeo.surg)
+AIC(full.rndes.sex, full.rndes.age, full.rndes.perfor,
+    full.rndes.adhere, full.rndes.obstruct)
 ```
-Adding surg gives us an AIC of 12294.01.
+
+Adding obstruct gives us an AIC of 11079.07.
+This change is minimal, so we will verify it using BIC.
 
 ```{r, include. = FALSE}
-BIC(full.rnde.obstruct, full.rndeo.surg)
+BIC(full.rnde.surg, full.rndes.obstruct)
 ```
-By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 12327.44 as opposed to 12331.18 for the model without surg. We will take another step of adding covariates to see if it improves the model. 
+By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 11111.89 as opposed to 11112.5 for the model that adds obstruct as another covariate. We will stop adding covariates here. 
+
 
 ```{r, include = FALSE}
-full.rndeos.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + obstruct + surg + sex, colon)
-full.rndeos.age = coxph(Surv(start, stop,status)~rx + nodes + differ + extent + obstruct + surg+ age, colon)
-full.rndeos.perfor = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + surg + perfor, colon)
-full.rndeos.adhere = coxph(Surv(start, stop,status)~rx + nodes + differ + extent+ obstruct + surg + adhere, colon)
-
-
-AIC(full.rndeos.sex, full.rndeos.age, full.rndeos.perfor,
-    full.rndeos.adhere)
+anova(full.rnde.surg)
 ```
-Adding adhere gives us an AIC of 12291.93, but we will use BIC to evaluate if this addition is better than the previous model without adhere. 
 
-```{r, include = FALSE}
-BIC(full.rndeo.surg, full.rndeos.adhere)
-```
-Looking at the BIC, we can see that the previous model without adhere has a lower BIC of 12327.44. Our final model for the combined dataset includes the covariates rx, nodes, differ, extent, obstruct, and surg. 
-
-```{r, include = FALSE}
-anova(full.rndeo.surg)
-```
+We verify using the likelihood ratio test that all of our covariates have a significant effect on time until recurrence or death. 
 
 ```{r}
-cox.zph(full.rndeo.surg)
+cox.zph(full.rnde.surg)
+
+colon.fit.differ = survfit(Surv(start,stop, status) ~ differ, colon)
+ggsurvplot(colon.fit.differ, colon, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + 
+  labs(x='Days until Recurrence')
 ```
-Using a cox ZPH test, we can see that differ and obstruct violate the proportionality assumption because their p-values are less than 0.05 (7.1e-06 and 0.0022) meaning they are time dependent covariates that we need to take care of through strata.  
+Using a cox ZPH test and a log-log plot, we can see that although differ was previously determined to have a significant effect, it violates the proportional hazards assumption. To fix this, we will construct a stratified model that stratifies on the 3 levels of tumor differentiation.   
 
 ```{r}
-comb.strat <- coxph(Surv(start, stop, status) ~ rx + nodes + strata(differ) + extent + strata(obstruct) + surg, data = colon)
+comb.strat <- coxph(Surv(start, stop, status) ~ rx + nodes + strata(differ) + extent + surg + strata(etype), data = colon)
+
 cox.zph(comb.strat)
+AIC(comb.strat)
 ```
-We run cox ZPH again on the new model that stratifies differ and obstruct and see that all the p-values are greater than 0.05 so we do not violate the proportionality assumption. 
+We verify again with the cox ZPH test that none of our covariates are in violation of the proportional hazards assumption after stratifying on tumor differentiation. In addition, we have massively reduced our AIC score to 9728.77 by fixing this violation. 
+
+```{r}
+anova(comb.strat)
+summary(comb.strat)
+```
+
+We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
+
+-After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.646. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
+- For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.083
+-For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
+-If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28.
+
+## Conclusion
+
+Clearly, we have reached some interesting conclusions in our recurrence subset, death subset, and overall death & recurrence analysis. The covariate effects seem to be quite similar across all of these analyses and influence time until recurrence and death in similar ways. One surprise is that our combined model, which stratifies on event type and uses a marginal time approach, had very similar conclusions to our recurrence and death subset analyses. We can say with confidence that overall, low toxicity Levamisole is not an effective treatment in itself to treat colon cancer and reduce time until a recurrence or patient death. It must be combined with 5FU moderately toxic treatment to have a significant effect. The other measurements that were included in our model and discussed throughout our analyses are important indicators for researchers to predict which patients will have a higher rate of recurrence or death. Therefore, it is important when tracking patients to not only measure the treatment given, but the state of the disease itself at study onset. Measurements such as # nodes with cancer, extent of local spread, and time from surgery to registration are absolutely vital to make accurate predictions in addition to measuring the treatment given to a particular patient. If a patient has high local spread, many lymph nodes with detectable cancer, and a long time from surgery to registration, they can reasonably be classified as a 'high risk' for recurrence or death individual. 
 
 
 
