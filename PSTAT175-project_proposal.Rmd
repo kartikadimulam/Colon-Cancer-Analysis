@@ -1,7 +1,7 @@
 ---
-title: "PSTAT175-ProjectBrief"
+title: "PSTAT175 -- Project"
 author: "Kartik Adimulam"
-date: "2025-04-29"
+date: "June 2, 2025"
 output: pdf_document
 ---
 
@@ -22,7 +22,7 @@ library(xfun)
 
 We are studying the Chemotherapy for Stage B/C `colon` dataset from the `survival` package in R (Laurie et al., 1989). This dataset comes from one of the first successful trials of chemotherapy for colon cancer. It examines the impact of treating patients with just a compound called Levamisole or a combination of it and 5-FU, a moderately toxic chemotherapy agent, or neither. Each patient has two records, one for recurrence and one for death, which we will take into account in our analysis.
 
-Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the 'rx' treatment variable which has 3 levels (No treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
+Our dataset contains survival time data of days until death of colon cancer patients that received different levels of chemotherapy. The primary covariate in our analysis is the `rx` treatment variable which has 3 levels (no treatment, low-toxicity treatment, and moderate toxicity treatment) and the censoring status indicator. There are other covariates such as:  
   - `sex`: male (1) or female (0) \
   - `age`: in years \
   - `obstruct`: was the colon obstructed by the tumor? \
@@ -34,6 +34,8 @@ Our dataset contains survival time data of days until death of colon cancer pati
   - `surg`: how long from surgery to registration? \
   - `node4`: indicator variable of more than 4 positive lymph nodes \
   - `etype`: did subject's cancer recur or death \
+  
+In our analysis we will use a significance level of $\alpha=0.05$.
   
 ## Motivating Questions 
 The scientific questions we are trying to answer are: \
@@ -48,7 +50,7 @@ head(colon)
 ```
 
 ## Survival Probability of Treatments 
-In our first step of evaluating which treatments affect survival times, we create a Kaplan Meier estimate plot to visualize and gain a base understanding of how the 3 treatments in the dataset affect the survival probabilities of colon cancer patients. 
+In our first step of evaluating which treatments affect survival times, we create a Kaplan-Meier estimate plot to visualize and gain a base understanding of how the 3 treatments in the dataset affect the survival probabilities of colon cancer patients. 
 ```{r, warning = FALSE}
 colon=colon
 colon_fit = survfit(Surv(time, status) ~ rx, colon)
@@ -76,15 +78,18 @@ colon.death.cox = coxph(Surv(time, status) ~ rx, colon.death)
 summary(colon.death.cox)
 anova(colon.death.cox)
 ```
-In our time until recurrence model, treatment using Levamisole compared with the baseline effect has a p-value of 0.888. This teaches us that this low-toxicity compound is not effective in reducing the time until recurrence for colon cancer patients.
 
-However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicity) is 0.00002. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
+This analysis has two parts. Each person in the dataset has two entries. The first is when the person's cancer returns and the next is when the person passes away. We created two models, one for time until recurrence and one for time until death. Tests were then performed on the significance of treatment type compared to each other.
 
-Overall, we observe using a likelihood ratio test p-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
+In our time until recurrence model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.888. This teaches us that this low-toxicity compound is not effective in reducing the time until recurrence for colon cancer patients.
 
-In our time until death model, treatment using Levamisole compared with the baseline effect has a p-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
+However, the $p$-value of the treatment which combines 5FU (moderately toxic) treatment and Levamisole (low toxicity) is 0.00002. We can conclude that, at the given significance level, the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
 
-However, the p-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
+Overall, we observe using a likelihood ratio test $p$-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
+
+In our time until death model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
+
+However, the $p$-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
 
 Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
@@ -528,4 +533,3 @@ Clearly, we have reached some interesting conclusions in our recurrence subset, 
 
 # 4. Citations
 Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
-
