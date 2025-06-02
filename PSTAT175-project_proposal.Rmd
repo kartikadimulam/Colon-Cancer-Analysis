@@ -248,7 +248,6 @@ We verify again post-stratification that all of our covariates are significant. 
 - If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
 ## Death Subset 
-
 Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
 
 ```{r, include = FALSE}
@@ -376,6 +375,7 @@ We verify again post-stratification that all of our covariates are significant. 
 
 
 \newpage
+
 # 3. Advanced Models 
 ## Recurrent Events Model
 
@@ -383,26 +383,32 @@ We verify again post-stratification that all of our covariates are significant. 
 colon$start=0
 colon$stop = colon$time
 
+for(i in 1:1858){
+  ifelse(colon$etype[i]==2, colon$start[i] <- colon$time[i+1], colon$stop[i]<-colon$time[i] )
+}
+
+colon = colon[colon$stop!=colon$start,]
+
 colon.cox = coxph(Surv(start,stop,status)~rx + strata(etype), colon)
 summary(colon.cox)
 anova(colon.cox)
 ```
-To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use the marginal recurrent event approach, since each event is of a different nature. The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. Therefore, each start time will be 0 and each stop time will be time of death or time of recurrence. 
+To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use a stratified counting process model The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. 
 
-In our recurrent events model, we again observe with a p-value of 0.788 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of ~ 0. Similarly to our recurrence and death analyses which were conducted separately, we reach the same conclusion that is noted by the researchers of the original study (Laurie 1989).
+In our recurrent events model, we again observe with a p-value of 0.796 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of 0.036. Similarly to our recurrence and death analyses which were conducted separately, we reach the same conclusion that is noted by the researchers of the original study (Laurie 1989).
 
 
 ```{r}
 colon.CI = exp(confint(colon.cox))
 colon.CI
 ```
-We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.843, 1.139] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.545,0.757] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
+We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.875, 1.19] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.7,0.99] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
 
 ```{r}
 exp(coef(colon.cox))
 ```
 
-The instantaneous hazard rate for Levamisole+5FU treatment is 0.642 times as large as the baseline hazard rate. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
+The instantaneous hazard rate for Levamisole+5FU treatment is 0.832 times as large as the baseline hazard rate. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
 
 ## Adding Covariates to the Combined Data Set
 
@@ -424,7 +430,7 @@ AIC(full.rx.sex, full.rx.age, full.rx.obstruct, full.rx.perfor,
     full.rx.adhere, full.rx.nodes, full.rx.differ, full.rx.extent,
     full.rx.surg, full.rx.node4)
 ```
-Similar to our data subsets where etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 11443.35. Node4 follows with the next lowest AIC score of 11743.73. We will not use node4 as a covariate since it is essentially measuring the same quantity as the nodes covariate. We do not want to use highly correlated covariates in our cox PH model. 
+Similar to our data subsets where etype = 1 and etype = 2, adding nodes as the next covariate after rx gave us the lowest AIC, 9597.89. We will not use node4 as a covariate since it is essentially measuring the same quantity as the nodes covariate. We do not want to use highly correlated covariates in our cox PH model. 
 
 ```{r, include = FALSE}
 full.rn.sex = coxph(Surv(start, stop, status) ~ rx + nodes + sex + strata(etype), colon)
@@ -441,7 +447,7 @@ AIC(full.rn.sex, full.rn.age, full.rn.obstruct, full.rn.perfor,
     full.rn.surg)
 ```
 
-Adding differ gives us the lowest AIC of 11128.39 
+Adding differ gives us the lowest AIC of 9329.79 
 
 ```{r, include = FALSE}
 full.rnd.sex = coxph(Surv(start, stop, status) ~ rx + nodes + differ + sex + strata(etype), colon)
@@ -457,7 +463,7 @@ AIC(full.rnd.sex, full.rnd.age, full.rnd.obstruct, full.rnd.perfor,
     full.rnd.adhere, full.rnd.extent,
     full.rnd.surg)
 ```
-Adding extent as our next covariate gives us an AIC of 11091.87 
+Adding extent as our next covariate gives us an AIC of 9313.93
 
 ```{r, include = FALSE}
 full.rnde.sex = coxph(Surv(start, stop, status) ~ rx + nodes + differ + extent + sex + strata(etype), colon)
@@ -472,7 +478,7 @@ AIC(full.rnde.sex, full.rnde.age, full.rnde.obstruct, full.rnde.perfor,
     full.rnde.adhere, full.rnde.surg)
 ```
 
-Adding surg gives us the lowest AIC of 11083.24 
+Adding surg gives us the lowest AIC of 9311.77
 
 ```{r, include = FALSE}
 full.rndes.sex = coxph(Surv(start, stop,status)~rx + nodes + differ+ extent + surg + sex + strata(etype), colon)
@@ -486,20 +492,14 @@ AIC(full.rndes.sex, full.rndes.age, full.rndes.perfor,
     full.rndes.adhere, full.rndes.obstruct)
 ```
 
-Adding obstruct gives us an AIC of 11079.07.
+Adding obstruct gives us an AIC of 9309.43
 This change is minimal, so we will verify it using BIC.
 
 ```{r, include. = FALSE}
 BIC(full.rnde.surg, full.rndes.obstruct)
 ```
-By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 11111.89 as opposed to 11112.5 for the model that adds obstruct as another covariate. We will stop adding covariates here. 
+By using BIC, which penalizes the number of covariates more strictly than AIC, we can see that the model with surg is a better model as it gives a BIC of 9340.13 as opposed to 9342.52 for the model that adds obstruct as another covariate. We will stop adding covariates here. 
 
-
-```{r, include = FALSE}
-anova(full.rnde.surg)
-```
-
-We verify using the likelihood ratio test that all of our covariates have a significant effect on time until recurrence or death. 
 
 ```{r}
 cox.zph(full.rnde.surg)
@@ -507,32 +507,37 @@ cox.zph(full.rnde.surg)
 colon.fit.differ = survfit(Surv(start,stop, status) ~ differ, colon)
 ggsurvplot(colon.fit.differ, colon, legend.labs=c('Well','Moderate', 'Poor'), fun='cloglog') + 
   labs(x='Days until Recurrence')
+
+colon.fit.extent = survfit(Surv(start,stop, status) ~ extent, colon)
+ggsurvplot(colon.fit.extent, colon, fun='cloglog') + 
+  labs(x='Days until Recurrence')
 ```
-Using a cox ZPH test and a log-log plot, we can see that although differ was previously determined to have a significant effect, it violates the proportional hazards assumption. To fix this, we will construct a stratified model that stratifies on the 3 levels of tumor differentiation.   
+
+Using a cox ZPH test and a log-log plot, we can see that extent and differ violate the PH assumption. To remedy this, we will construct a stratified model that stratifies on the 3 levels of tumor differentiation and 4 levels of local spread extent.   
 
 ```{r}
-comb.strat <- coxph(Surv(start, stop, status) ~ rx + nodes + strata(differ) + extent + surg + strata(etype), data = colon)
+
+comb.strat <- coxph(Surv(start, stop, status) ~ rx + nodes + strata(differ) + strata(extent) + surg + strata(etype), data = colon)
 
 cox.zph(comb.strat)
 AIC(comb.strat)
+
 ```
-We verify again with the cox ZPH test that none of our covariates are in violation of the proportional hazards assumption after stratifying on tumor differentiation. In addition, we have massively reduced our AIC score to 9728.77 by fixing this violation. 
+We verify again with the cox ZPH test that none of our covariates are in violation of the proportional hazards assumption after stratifying on tumor differentiation. In addition, we have massively reduced our AIC score to 7188.06 fixing this violation. 
 
 ```{r}
-anova(comb.strat)
 summary(comb.strat)
 ```
 
-We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
+Using our model output, we can begin our model interpretation as follows:
 
-- After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.646. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
-- For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.083
-- For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
-- If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28.
+-After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.854. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
+- For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.064
+-If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.16.
 
 ## Conclusion
 
-Clearly, we have reached some interesting conclusions in our recurrence subset, death subset, and overall death & recurrence analysis. The covariate effects seem to be quite similar across all of these analyses and influence time until recurrence and death in similar ways. One surprise is that our combined model, which stratifies on event type and uses a marginal time approach, had very similar conclusions to our recurrence and death subset analyses. We can say with confidence that overall, low toxicity Levamisole is not an effective treatment in itself to treat colon cancer and reduce time until a recurrence or patient death. It must be combined with 5FU moderately toxic treatment to have a significant effect. The other measurements that were included in our model and discussed throughout our analyses are important indicators for researchers to predict which patients will have a higher rate of recurrence or death. Therefore, it is important when tracking patients to not only measure the treatment given, but the state of the disease itself at study onset. Measurements such as # nodes with cancer, extent of local spread, and time from surgery to registration are absolutely vital to make accurate predictions in addition to measuring the treatment given to a particular patient. If a patient has high local spread, many lymph nodes with detectable cancer, and a long time from surgery to registration, they can reasonably be classified as a 'high risk' for recurrence or death individual. 
+Clearly, we have reached some interesting conclusions in our recurrence subset, death subset, and overall death & recurrence analysis. The covariate effects seem to be quite similar across all of these analyses and influence time until recurrence and death in similar ways. We can say with confidence that overall, low toxicity Levamisole is not an effective treatment in itself to treat colon cancer and reduce time until a recurrence or patient death. It must be combined with 5FU moderately toxic treatment to have a significant effect. The other measurements that were included in our model and discussed throughout our analyses are important indicators for researchers to predict which patients will have a higher rate of recurrence or death. Therefore, it is important when tracking patients to not only measure the treatment given, but the state of the disease itself at study onset. Measurements such as # nodes with cancer, extent of local spread, and time from surgery to registration are absolutely vital to make accurate predictions in addition to measuring the treatment given to a particular patient. If a patient has high local spread, many lymph nodes with detectable cancer, and a long time from surgery to registration, they can reasonably be classified as a 'high risk' for recurrence or death individual.  
 
 
 \newpage
