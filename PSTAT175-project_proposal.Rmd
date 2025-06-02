@@ -89,7 +89,7 @@ Overall, we observe using a likelihood ratio test $p$-value of ~0 that the treat
 
 In our time until death model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
 
-However, the $p$-value of the treatment which combines 5FU (moderately toxic)  treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
+However, the $p$-value of the treatment which combines 5FU (moderately toxic) treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
 
 Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
 
@@ -98,9 +98,13 @@ Overall, we observe using a likelihood ratio test p-value of 0.0023 that the tre
 ```{r}
 colon.recur.CI = exp(confint(colon.recur.cox))
 colon.death.CI = exp(confint(colon.death.cox))
+colon.recur.CI
+colon.death.CI
 ```
-Again the CIs show that Levamisole treatment is not significant but Levamisole+5FU treatment
-is effective in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for both models. We are 95% confident that Lev+5FU treatment significantly affects both time until recurrence and time until death. 
+
+The confidence intervals for recurrence and death are shown above.
+
+Again the CIs show that Levamisole treatment is not significant but Levamisole+5FU treatment is effective in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for both models. We are 95% confident that Lev+5FU treatment significantly affects both time until recurrence and time until death. 
 
 
 ## Hazard Ratio
@@ -111,6 +115,7 @@ exp(coef(colon.death.cox))
 
 At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
 
+\newpage
 # 2. Model Fitting 
 ## Recurrence of Cancer Subset
 Using forward stepwise selection  and AIC, we can find the most relevant covariates to build and finds the best model at predicting survival times. We first perform this process on the subset of data where there was a recurrence of cancer in patients. 
@@ -237,10 +242,10 @@ To verify again that none of our covariates violate this assumption, we will run
 
 We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
 
--After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment remains a factor of 0.6.  
+- After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment remains a factor of 0.6.  
 - For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.078. This is not a huge effect, but it is important to note that the number of lymph nodes with cancer were as high as 33 in our data set, so the hazard rate could gradually increase to significantly high levels as this covariate increases for certain subjects. However, the mean of this covariate is only ~ 3.7 nodes
--For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
--If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
+- For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
+- If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
 ## Death Subset 
 
@@ -364,13 +369,13 @@ summary(death.rnde.surg)
 
 We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
 
--After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.694. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
+- After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.694. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
 - For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.088
--For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
--If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.29.
+- For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
+- If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.29.
 
 
-
+\newpage
 # 3. Advanced Models 
 ## Recurrent Events Model
 
@@ -520,16 +525,16 @@ summary(comb.strat)
 
 We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
 
--After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.646. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
+- After accounting for other covariate effects, the impact on hazard rate of the Levamisole+5FU treatment is slightly increased to a factor of 0.646. In other words, its influence on decreasing hazard rate is slightly lessened after accounting for other variables. 
 - For each additional lymph nodes with detectable cancer that is observed at the start of the study, the hazard rate for that individual increases by a factor of 1.083
--For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
--If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28.
+- For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66.
+- If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28.
 
 ## Conclusion
 
 Clearly, we have reached some interesting conclusions in our recurrence subset, death subset, and overall death & recurrence analysis. The covariate effects seem to be quite similar across all of these analyses and influence time until recurrence and death in similar ways. One surprise is that our combined model, which stratifies on event type and uses a marginal time approach, had very similar conclusions to our recurrence and death subset analyses. We can say with confidence that overall, low toxicity Levamisole is not an effective treatment in itself to treat colon cancer and reduce time until a recurrence or patient death. It must be combined with 5FU moderately toxic treatment to have a significant effect. The other measurements that were included in our model and discussed throughout our analyses are important indicators for researchers to predict which patients will have a higher rate of recurrence or death. Therefore, it is important when tracking patients to not only measure the treatment given, but the state of the disease itself at study onset. Measurements such as # nodes with cancer, extent of local spread, and time from surgery to registration are absolutely vital to make accurate predictions in addition to measuring the treatment given to a particular patient. If a patient has high local spread, many lymph nodes with detectable cancer, and a long time from surgery to registration, they can reasonably be classified as a 'high risk' for recurrence or death individual. 
 
 
-
+\newpage
 # 4. Citations
 Laurie, J A et al. “Surgical adjuvant therapy of large-bowel carcinoma: an evaluation of levamisole and the combination of levamisole and fluorouracil. The North Central Cancer Treatment Group and the Mayo Clinic.” Journal of clinical oncology : official journal of the American Society of Clinical Oncology vol. 7,10 (1989): 1447-56. doi:10.1200/JCO.1989.7.10.1447
