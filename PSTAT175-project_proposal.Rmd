@@ -1,6 +1,6 @@
 ---
 title: "PSTAT175 -- Project"
-author: "Kartik Adimulam"
+author: "Valeria Lopez, Ciaran Finnegan, Kartik Adimulam"
 date: "June 2, 2025"
 output: pdf_document
 ---
@@ -398,12 +398,12 @@ To produce a combined model that considers both recurrence and death, we will re
 
 In our recurrent events model, we again observe with a p-value of 0.796 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of 0.036. Similarly to our recurrence and death analyses which were conducted separately, we reach the same conclusion that is noted by the researchers of the original study (Laurie 1989).
 
-
 ```{r}
 colon.CI = exp(confint(colon.cox))
 colon.CI
 ```
 We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.875, 1.19] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.7,0.99] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
+
 
 ```{r}
 exp(coef(colon.cox))
