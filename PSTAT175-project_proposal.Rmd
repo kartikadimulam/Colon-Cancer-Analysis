@@ -364,7 +364,7 @@ We run cox ZPH again on this new stratified cox PH model to ensure no violations
 
 ```{r}
 anova(death.rnde.surg)
-summary(death.rnde.surg)
+exp(coef(death.rnde.surg))
 ```
 
 We verify again post-stratification that all of our covariates are significant. We can begin our model interpretation as follows:
@@ -527,7 +527,7 @@ AIC(comb.strat)
 We verify again with the cox ZPH test that none of our covariates are in violation of the proportional hazards assumption after stratifying on tumor differentiation. In addition, we have massively reduced our AIC score to 7188.06 fixing this violation. 
 
 ```{r}
-summary(comb.strat)
+exp(coef(comb.strat))
 ```
 
 Using our model output, we can begin our model interpretation as follows:
