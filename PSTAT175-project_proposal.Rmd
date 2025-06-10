@@ -541,7 +541,7 @@ To retirate, all of the effects that we have described above are the impact of t
 
 Since the nature of our two events are different, one being recurrence of colon cancer while the other is death due to colon cancer, we will also construct a competing risks model, in which we consider the difference between the two outcomes. As mentioned before, a cause-specific coxPH model treats other event types as censored. For example, if our subject has a recurrence at time 1000 and a death at time 1500. The time 1000 observations is treated as if another person in the risk set was censored. The time 1500 event is treated as an actual event.
 
-##Recurrence Analysis
+## Recurrence Analysis
 
 ```{r}
 recurrence_curv = survfit(Surv(time, etype==1)~rx, colon)
@@ -550,7 +550,7 @@ ggsurvplot(recurrence_curv)
 
 It seems possible from this recurrence plot that the effect of Lev+5FU changes with time, As we see that after time=2000, the curves seem to narrow. We will attempt a time-split data format to model a potential change in Lev+5FU after 2000 days.
 
-##Recurrence Time Split
+## Recurrence Time Split
 
 ```{r}
 colon$time2 = colon$time
@@ -673,7 +673,7 @@ We see that all of our covariates are significant in this model using the Log-Li
 - Lev+5FU treatment decreases hazard rate for recurrence by 23%
 - For every additional node with detectable cancer, hazard rate for recurrence increases by 6.6%
 - Every 1 level increase in extent of local spread of the cancer is associated with a predicted increase of 24.4% in hazard rate
-- For an increase in the level of the differentiation of the tumor, hazard rate increases by 8.9%
+- For an increase in the level of the differentiation of the tumor, hazard rate increases by 9.7%
 
 ##Death Analysis
 
