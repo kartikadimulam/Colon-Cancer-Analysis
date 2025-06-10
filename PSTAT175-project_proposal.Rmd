@@ -675,7 +675,7 @@ We see that all of our covariates are significant in this model using the Log-Li
 - Every 1 level increase in extent of local spread of the cancer is associated with a predicted increase of 24.4% in hazard rate
 - For an increase in the level of the differentiation of the tumor, hazard rate increases by 9.7%
 
-##Death Analysis
+## Death Analysis
 
 ```{r}
 death_curv= survfit(Surv(time, etype==2)~rx, colon)
@@ -800,7 +800,7 @@ We see that all of our covariates are significant in this model using the Log-Li
 - Lev+5FU treatment decreases hazard rate for death by 28%
 - For every additional node with detectable cancer, hazard rate for deathincreases by 8.4%
 - Every 1 level increase in extent of local spread of the cancer is associated with a predicted increase of 28.2% in hazard rate
-- For an increase in the level of the differentiation of the tumor, hazard rate increases by 8.9%
+- For an increase in the level of the differentiation of the tumor, hazard rate increases by 9.7%
 
 Similar to our splitting up of the data sets above, it is important to note here again that all of these interpreations are only measuring the effect on time until death, not recurrence. The difference in the cause-specific model that we have chosen here, as discussed before, is it uses the whole data set but considers all other failure types as censored observations. It is a method employed to analyze competing risks. 
 
