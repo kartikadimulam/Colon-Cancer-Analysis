@@ -53,7 +53,9 @@ head(colon)
 ```
 
 ## Survival Probability of Treatments 
+
 In our first step of evaluating which treatments affect survival times, we create a Kaplan-Meier estimate plot to visualize and gain a base understanding of how the 3 treatments in the dataset affect the survival probabilities of colon cancer patients. 
+
 ```{r, warning = FALSE}
 colon=colon
 colon_fit = survfit(Surv(time, status) ~ rx, colon)
@@ -68,7 +70,18 @@ ggsurvplot(colon_fit, colon, title='KM Estimator Colon Cancer',xlab='time',
 ```
 From the graph, we observe that the patients with the treatment that combines 5FU and Levamisole have a higher survival probability than those with no treatment and those with just the Levamisole treatment. The survival probability for patients with the Levamisole treatment seem to not have a large difference compared to those with no treatment, but the patients with no treatment have the lowest survival time. 
 
-## Splitting Data 
+## Failure type and Models explanation
+
+An interesting and important feature of our data set is that there are two different types of events for each subject, recurrence and death. This poses a potential problem for us because these two event types are very different in nature. In addition it is possible for one of them to be censored while the other is not. There are 2 rows for each subject in this data, each representing one of the event types. It is possible for a subject to have a recurrence at time 1000, for example, but then be censored at type 1500. In this case, the data set displays a status=1 for the recurrence row and a status=0 for the death row. Since our overall goal in this analysis is to understand the effectiveness of the Levamisole+5FU chemotherapy treatment, we will employ some different methods in order to understand the effect on time (both recurrence and death). 
+
+As advised, we will first split up our data based on event type, creating two coxPH models. One of the models will be modelling the effect of Lev+5FU treatment on time until recurrence. The other model will be modelling the effect of Lev+5FU treatment on time until death. These models will be completely independent of each other and will proceed in the normal Cox PH fashion, stratifying on variables that are in violation of the PH assumption and using AIC/BIC scores to evaluate covariates added into the model. 
+
+However, it is important also to not only study both failure types in isolation, but to combine them into a single model. We will do this in a myriad of ways. The first technique that we will employ is to use the entire data set, but then to simply stratify on event type. In this case, we will create a single model that estimates a different baseline hazard for recurrence and death. For each of these baseline hazards, we will attempt to estimate the overall effect of Lev+5FU on time. The coefficient estimate that we derive will be a single value that estiamtes the equal effect of Lev+5FU on each event type.
+
+Another technique that we will employ is the Cause-Specific Cox PH Hazard Model. In this model, we treat other event types as censored, allowing us to determine a separate hazard rate for each event. This does not give us an overall effect of Lev+5FU on time, which is our goal. Instead we want to treat each failure type differently with a different coefficient estimate. This appraoch is slightly similar in nature to splitting up our data set, but also different in the treatment of censoring. With Cause-Specific Cox PH, ALL OTHER event types are treated as censored. 
+
+## Recurrence Analysis
+
 ```{r}
 colon.recur = colon[colon$etype==1,]
 colon.death = colon[colon$etype==2,]
@@ -77,50 +90,37 @@ colon.recur.cox = coxph(Surv(time,status)~rx, colon.recur)
 summary(colon.recur.cox)
 anova(colon.recur.cox)
 
-colon.death.cox = coxph(Surv(time, status) ~ rx, colon.death)
-summary(colon.death.cox)
-anova(colon.death.cox)
-```
 
-This analysis has two parts. Each person in the dataset has two entries. The first is when the person's cancer returns and the next is when the person passes away. We created two models, one for time until recurrence and one for time until death. Tests were then performed on the significance of treatment type compared to each other.
+```
 
 In our time until recurrence model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.888. This teaches us that this low-toxicity compound is not effective in reducing the time until recurrence for colon cancer patients.
 
 However, the $p$-value of the treatment which combines 5FU (moderately toxic) treatment and Levamisole (low toxicity) is 0.00002. We can conclude that, at the given significance level, the combination of 5FU and Levamisole is effective in reducing time until recurrence but the treatment of just using Levamisole is not. 
 
-Overall, we observe using a likelihood ratio test $p$-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
-
-In our time until death model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
-
-However, the $p$-value of the treatment which combines 5FU (moderately toxic) treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
-
-Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
+Overall, we observe using a likelihood ratio test $p$-value of ~0 that the treatment itself is effective in reducing time until recurrence, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment.
 
 
-## Confidence Intervals
+## Recurrence CI
+
 ```{r}
-colon.recur.CI = exp(confint(colon.recur.cox))
-colon.death.CI = exp(confint(colon.death.cox))
-colon.recur.CI
-colon.death.CI
+exp(confint(colon.recur.cox))
+
 ```
 
-The confidence intervals for recurrence and death are shown above.
-
-Again the CIs show that Levamisole treatment is not significant but Levamisole+5FU treatment is effective in reducing time until recurrence and death. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for both models. We are 95% confident that Lev+5FU treatment significantly affects both time until recurrence and time until death. 
+The CI show that Levamisole treatment is not significant but Levamisole+5FU treatment is effective in reducing time until recurrence. Our hazard ratio CI for Lev treatment contains 1 for both models, but our hazard ratio CI for Lev+5FU treatment does not contain 1 for the model. We are 95% confident that Lev+5FU treatment significantly affects time until recurrence.
 
 
-## Hazard Ratio
+## Recurrence Hazard Ratio
+
 ```{r}
 exp(coef(colon.recur.cox))
-exp(coef(colon.death.cox))
 ```
 
-At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
+At any point in time Lev+5FU treated patients are 0.6 times as likely to have a colon cancer recurrence compared to patients without treatment. 
 
 \newpage
-# 2. Model Fitting 
-## Recurrence of Cancer Subset
+
+## Recurrence Model Fitting
 Using forward stepwise selection  and AIC, we can find the most relevant covariates to build and finds the best model at predicting survival times. We first perform this process on the subset of data where there was a recurrence of cancer in patients. 
 ```{r, warning = FALSE}
 colon.rx.sex = coxph(Surv(time,status)~rx + sex, colon.recur)
@@ -209,7 +209,7 @@ anova(colon.rndes.sex)
 We also verify this by checking that if we add sex as a covariate, it is not significantly affecting time until recurrence from the likelihood ratio test.
 
 
-### Checking Proportional Hazards Assumptions
+### Checking PH Assumptions of Recurrence
 
 ```{r}
 colon.fit = survfit(Surv(time, status) ~ rx, colon.recur)
@@ -250,8 +250,36 @@ We verify again post-stratification that all of our covariates are significant. 
 - For our 4 levels of increasing local spread extent of the colon cancer, hazard rate increases by an alarming factor of 1.66. This is an intuitive finding, as the extent of cancer spread is a strong indicator of a patient having a recurrence or death. 
 - If time from surgery to registration is classified as 'long', hazard rate is increased by a factor of 1.28. This is an interesting finding and indicates that the time spent between surgery and registration is vital to the time it took patients to have a disease recurrence or death. This is also an intuitive finding, as a patient that had a long time in between is experiencing more time that could contribute to the growth of cancer spread. 
 
-## Death Subset 
+## Death Analysis
+
 Using the same exact process as above for the data with etype=1 (recurrence of cancer), we find that for etype = 2 (death), the model had the same covariates until adding the 6th covariate. Adding obstruct to the death cox model gave us the next best model which is different from the recur data, where at this point, adding sex as our next covariate gave us the lower AIC score. However, in both subsets of data, adding the 6th covariate gave us a higher BIC score, allowing us to leave it out and have the same covariates (rx, node, differ, extent, surg).
+
+```{r}
+colon.death.cox = coxph(Surv(time, status) ~ rx, colon.death)
+summary(colon.death.cox)
+anova(colon.death.cox)
+```
+
+In our time until death model, treatment using Levamisole compared with the baseline effect has a $p$-value of 0.809. This teaches us that this low-toxicity compound is not effective in reducing the time until death for colon cancer patients.
+
+However, the $p$-value of the treatment which combines 5FU (moderately toxic) treatment and Levamisole (low toxicitity) is 0.0018. We can conclude that the combination of 5FU and Levamisole is effective in reducing time until death but the treatment of just using Levamisole is not. This is an outcome that is discussed in the original study, which states that "after correction for imbalances in prognostic variables, were only suggestive for levamisole alone (P = .05) but quite significant for levamisole plus 5-FU (P = .003)" (Laurie et al., 1989). It is interesting, however, that our p-value for levamisole treatment alone obtained from our cox PH model is so much higher than the p-value obtained by the researchers of this study. Although both of us agree that Levamisole treatment in itself in ineffective, our level of ineffectiveness is much higher than that of the study. This could potentially be attributed to the treatment of other covariates by the researchers differing from our own treatment. 
+
+Overall, we observe using a likelihood ratio test p-value of 0.0023 that the treatment itself is effective in reducing time until death, but most of this effect is likely due to the high effectiveness of Levamisole+5FU treatment. 
+
+##Death CI
+
+```{r}
+exp(confint(colon.death.cox))
+```
+
+The CI show that Levamisole treatment is not significant but Levamisole+5FU treatment is effective in reducing time until death. Our hazard ratio CI for Lev treatment contains 1 for the model, but our hazard ratio CI for Lev+5FU treatment does not contain 1. We are 95% confident that Lev+5FU treatment significantly affects time until death.
+
+```{r}
+exp(coef(colon.death.cox))
+```
+
+The patients with Lev+5FU are 0.69 times as likely to have a colon cancer death compared to patients without treatment. 
+
 
 ```{r, include = FALSE}
 death.rx.sex = coxph(Surv(time,status)~rx + sex, colon.death)
@@ -339,7 +367,7 @@ BIC(death.rnde.surg, death.rndes.obstruct)
 By using BIC, which penalizes the number of covariates more than AIC, we can see that the previous model, without obstruct, is a better model as it gives a BIC of 5462.657. Therefore, we will use the exact same covariates as the recurrence model. 
 
 
-### Checking Proportional Hazards Assumptions
+### Checking PH Assumptions for Death 
 
 ```{r}
 cox.zph(death.rnde.surg)
@@ -381,66 +409,82 @@ We verify again post-stratification that all of our covariates are significant. 
 
 # 3. Advanced Models 
 
-## Competing Risks Model
+## Cause Specific Cox PH model
 
-Since the nature of our two events are different, one being recurrence of colon cancer while the other is death due to colon cancer, we will also construct a competing risks model, in which we consider the difference between the two outcomes. To achieve this, we will restructure our data set so that our status variable is 1 if the subject had a recurrence and 2 if the subject died. 
+Since the nature of our two events are different, one being recurrence of colon cancer while the other is death due to colon cancer, we will also construct a competing risks model, in which we consider the difference between the two outcomes. As mentioned before, a cause-specific coxPH model treats other event types as censored. For example, if our subject has a recurrence at time 1000 and a death at time 1500. The time 1000 observations is treated as if another person in the risk set was censored. The time 1500 event is treated as an actual event 
 
 ```{r}
-for(i in 1:1858){
-  if(colon$etype[i] == 2 & colon$status[i] != 0){
-    colon$nstatus[i] <- 2
-  } else if(colon$etype[i] == 1 & colon$status[i] != 0){
-    colon$nstatus[i] <- 1
-  } else {
-    colon$nstatus[i] <- 0
-  }
-}
-
-recurrence_curv = survfit(Surv(time, nstatus==1)~rx, colon)
+recurrence_curv = survfit(Surv(time, etype==1)~rx, colon)
 ggsurvplot(recurrence_curv)
 
-death_curv= survfit(Surv(time, nstatus==2)~rx, colon)
+death_curv= survfit(Surv(time, etype==2)~rx, colon)
 ggsurvplot(death_curv)
 ```
 
-We will create a cox PH model to see all different outcome types
 
 ```{r}
-dr_curv= survfit(Surv(time, nstatus>0)~rx, colon)
-ggsurvplot(dr_curv, xlab='Time Until any Outcome')
 
-dr.ph = coxph(Surv(time, nstatus>0) ~ rx, colon)
+cause.recur = coxph(Surv(time, etype==1) ~ rx, colon)
+anova(cause.recur)
+exp(confint(cause.recur))
+exp(coef(cause.recur))
 ```
 
-We can see that Levamisole + 5FU treatment still has a significant effect on time until recurrence or death while Levamisole treatment by itself does not. 
+We can see that Levamisole + 5FU treatment still has a significant effect on time until recurrence while Levamisole treatment by itself does not. In our cause-specific model, Lev+5FU treatment decreases recurrence hazard rate by 22%
 
-##Accounting for Different Event Types
+```{r}
+cause.death = coxph(Surv(time, etype==2) ~ rx, colon)
+anova(cause.death)
+exp(confint(cause.death))
+exp(coef(cause.death))
+```
 
-To observe the distributed effect of the treatment across different event types (recurrence or death), we will now construct our competing risks model using the stratification method. By stratifying on the outcome variable (etype), we can create different baseline hazard functions for each event type and then observe the effect of the treatment on both baseline hazard functions. Overall, we should be able to attain an overall effect of the treatment on each type of outcome type. 
+We can see that Levamisole + 5FU treatment still has a significant effect on time until death  while Levamisole treatment by itself does not. In our cause-specific model, Lev+5FU treatment decreases death hazard rate by 26%.
+
+##Stratifying on Event Type and Trying Interactions
+
+To observe the distributed effect of the treatment across different event types (recurrence or death), we will now construct our competing risks model using the stratification method. By stratifying on the outcome variable (etype), we can create different baseline hazard functions for each event type and then observe the effect of the treatment on both baseline hazard functions. Overall, we should be able to attain an overall effect of the treatment on each type of outcome. 
 
 ```{r}
 all.cox = coxph(Surv(time, status) ~ rx + strata(etype), colon)
 anova(all.cox)
+exp(confint(all.cox))
+exp(coef(all.cox))
 ```
 
-After stratifying on event type, we observe with a p-value of 1.92 * 10^-8 and a LRT statistic of 35.54 that the treatment of Levamisole + 5FU has a significant effect on time until recurrence or death. However, we can observe from our coxPH output that Levamisole treatment itself does not have a significant effect without the added 5FU chemotherapy agent.
+After stratifying on event type, we observe with a p-value of 1.92 * 10^-8 and a LRT statistic of 35.54 that the treatment of Levamisole + 5FU has a significant effect on time until recurrence and death. Again, Levamisole treatment in itself is not significant, as we can see from its 95% CI that it contains 1. We see one of our largest effect of Lev+5FU treatment in this model, as it decreases hazard rate of recurrence and death by 36%
+
 
 ```{r}
 exp(coef(all.cox)[2])
 exp(confint(all.cox))
 ```
-With a 95% CI of [0.842, 1.139] for Levamisole treatment and [0.544,0.757] for Levamisole+5FU treatment, we can conclude with 95% confidence that Levamisole treatment is only effective with the 5FU agent added. It has an effect of reducing the hazard rate by 36%
+With a 95% CI of [0.842, 1.139] for Levamisole treatment and [0.544,0.757] for Levamisole+5FU treatment, we can conclude with 95% confidence that Levamisole treatment is only effective with the 5FU agent added. It has an effect of reducing the hazard rate by 36%.
 
-## Differences across Event Types
+## Different effect across Event Types
 
-We will now attempt to analyze if the treatment effect is different across the different event types. 
+We will now attempt to analyze if the treatment effect is different across the different event types. Again, our two event types are either a recurrence of cancer or a death due to cancer. Using an interaction term in our coxPH model, we can observe if the effect of Levamisole+5FU treatment differs between recurrence and death. We will stratify on the etype variable because we do not want to use it as a covariate. 
 
 ```{r}
 diff.cox = coxph(Surv(time, status) ~ rx*strata(etype), colon)
 anova(diff.cox)
 ```
 
-We can conclude with our likelihood ratio test statistic of 0.9548 that the effect of the treatment does not differ significantly across event types. Therefore, we do not need to consider the interaction between rx treatment and etype. 
+We can conclude with our likelihood ratio test statistic of 0.6204 that the effect of the treatment does not differ significantly across event types. Therefore, we do not need to consider the interaction between rx treatment and etype. 
+
+## Event Type as a Covariate
+
+In order to more thoroughly understand the effect of event type, we will create a model where we actually use etype as a covariate instead of just stratifying on it. This will allow us to understand if etype itself as an impact on overall survival time and if there is a significant interaction between the effect of etype and the treatment. 
+
+```{r}
+etype.cox = coxph(Surv(time, status) ~ rx*etype, colon)
+anova(etype.cox)
+cox.zph(etype.cox)
+```
+
+We see from this model that our interaction between the treatment and etype is not significant, This means that event type has a significant effect on time, but this is not an important finding for us in context of our overall scientific question. The interaction between etype and rx treatment is not significant. We can see that it is best to stratify on etype instead of actually using it as a covariate in an interaction like we have done here. We do not want to estimate a coefficient for etype, but instead understand how the treatment affects both event types differently.
+
+##CIC Curves
 
 We will continue our competing risks model below with a CIC curve:
 
@@ -461,13 +505,13 @@ We observe a similar phenomenon as before across all treatment types. However, i
 
 ## Recurrent Events CP Model
 
-To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use a stratified counting process model The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. 
+To produce a combined model that considers both recurrence and death, we will restructure our data into stop-start data format. We will use a stratified counting process model The first occurrence for each subject is a recurrence of cancer, while the second occurrence is death. This model, however, essentially treats both failure types as the same event. 
 
 ## What Does a Failure Mean in the CP Model?
 
 In the recurrent event model structured as a counting process model, the first stop value refers to a recurrence of cancer in a particular subject while the second stop value refers to a death of a patient. We are modelling recurrence as an initial stop value and death as a final stop value. 
 
-In our recurrent events model, we again observe with a p-value of 0.796 that the Lemavisole treatment in itself is not effective in reducing time until recurrence or death. However, Levamisole treatment combined with the moderately toxic 5FU treatment is effective in reducing time until recurrence or death, as it has a p-value of 0.036. Similarly to our recurrence and death analyses which were conducted separately, we reach the same conclusion that is noted by the researchers of the original study (Laurie 1989).
+A failure in the CP model refers to either a recurrence of cancer or a death due to colon cancer. There are no situations where etype 1 is censored while etype 2 is an event. It is only possible in our data set that etype 1 occurs while etype 2 is censored. This would mean that a subject had a recurrence of cancer at time 1000, for example, and then at time 1500 was censored and dropped from the study. It is not possible the other way around, since if an individual is censored in their etype=1 row, their etype 2 is automatically censored at that same recorded time. 
 
 ```{r}
 colon$start=0
@@ -477,26 +521,28 @@ for(i in 1:1858){
   ifelse(colon$etype[i]==2, colon$start[i] <- colon$time[i+1], colon$stop[i]<-colon$time[i] )
 }
 
-colon = colon[colon$stop!=colon$start,]
+for(i in 1:1858){
+  if(colon$stop[i]==colon$start[i]){
+    colon$stop[i] <- colon$start[i]+0.01
+  }
+}
 
-colon.cox = coxph(Surv(start,stop,status)~rx + strata(etype), colon)
+colon.cox = coxph(Surv(start,stop,status)~rx, colon)
 summary(colon.cox)
 anova(colon.cox)
-```
 
-
-```{r}
 colon.CI = exp(confint(colon.cox))
 colon.CI
 ```
-We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.875, 1.19] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.7,0.99] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
+We confirm with 95% confidence that Levamisole treatment is not effective in itself using a confidence interval [0.475, 1.14] that contains 1. Our confidence interval for Levamisole+5FU treatment is quite small [0.58,0.8] and does not contain 1. We confirm our previous conclusion with 95% confidence that the combined treatment is effective in reducing time until recurrence or death. 
 
 
 ```{r}
 exp(coef(colon.cox))
 ```
 
-The instantaneous hazard rate for Levamisole+5FU treatment is 0.832 times as large as the baseline hazard rate. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
+
+Lev+5FU reduces the hazard rate by 32%. We conclude that the treatment is indeed effective in significantly reducing time until a recurrence or death. This is the same conclusion that was derived from the recurrence data set as well as the death data set, but we can confirm that the combination treatment of low-toxicity and medium-toxicity compounds retains its effectiveness in the combined model of both event types. 
 
 ## Adding Covariates to the Combined Data Set
 
